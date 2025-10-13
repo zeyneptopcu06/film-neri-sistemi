@@ -1,0 +1,19 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.log
+
+# Python virtual environment
+venv/
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+
+# IDE / Editor dosyaları
+.vscode/
+.idea/
+
+# Environment variables
+.env
