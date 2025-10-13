@@ -1,0 +1,10 @@
+Flask
+gunicorn
+# Kullandığınız veritabanı sürücüsünü ekleyin:
+# Eğer PostgreSQL kullanıyorsanız:
+psycopg2-binary
+# Eğer MySQL kullanıyorsanız:
+PyMySQL
+# Eğer SQLAlchemy kullanıyorsanız:
+Flask-SQLAlchemy
+# ... ve kodunuzda kullandığınız diğer tüm kütüphaneler (requests, pandas, vb.)
