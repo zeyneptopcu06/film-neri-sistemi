@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol - Tamama Film Öneri Sistemi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body class="register-page">
+    <div class="bg-animation">
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+    </div>
+
+    <header>
+        <h1><a href="/">🎬 Filma</a></h1>
+    </header>
+
+    <main>
+        <div class="auth-container">
+            <section id="auth-section">
+                <div class="auth-header">
+                    <h2>Kayıt Ol</h2>
+                    <p>Yeni hesap oluşturun</p>
+                </div>
+                
+                <form id="register-form" class="auth-form">
+                    <div class="input-group">
+                        <input type="text" id="register-username" placeholder="Kullanıcı Adı" required>
+                        <span class="input-icon">👤</span>
+                        <div class="validation-icon" id="username-check"></div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="email" id="register-email" placeholder="Email Adresi" required>
+                        <span class="input-icon">📧</span>
+                        <div class="validation-icon" id="email-check"></div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="password" id="register-password" placeholder="Şifre" required>
+                        <span class="input-icon">🔒</span>
+                        <button type="button" class="password-toggle" onclick="togglePassword('register-password')">👁️</button>
+                    </div>
+                    
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strength-fill"></div>
+                        </div>
+                        <div class="strength-text" id="strength-text">Şifre gücü</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="password" id="register-confirm" placeholder="Şifre Tekrarı" required>
+                        <span class="input-icon">🔒</span>
+                        <button type="button" class="password-toggle" onclick="togglePassword('register-confirm')">👁️</button>
+                        <div class="validation-icon" id="confirm-check"></div>
+                    </div>
+                    
+                    <div class="terms-agreement">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="terms-check" required>
+                            <span class="checkmark"></span>
+                            <span class="terms-text">
+                                <a href="#" onclick="showTerms()">Kullanım Koşulları</a> ve 
+                                <a href="#" onclick="showPrivacy()">Gizlilik Politikası</a>'nı kabul ediyorum
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn">
+                        <span class="btn-text">Kayıt Ol</span>
+                        <div class="loading-spinner" style="display: none;"></div>
+                    </button>
+                </form>
+                
+                <div id="register-message" class="message"></div>
+                
+                <p class="auth-link">Zaten bir hesabın var mı? <a href="/giris">Giriş Yap</a></p>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Filma</p>
+    </footer>
+
+<script type="module" src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>

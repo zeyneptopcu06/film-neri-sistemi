@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Favorilerim - Film Öneri Sistemi{% endblock %}
+
+{% block nav_links %}
+{% endblock %}
+
+{% block content %}
+<section class="favorites-section">
+    <h2>Favori Filmlerim</h2>
+    <div id="favorites-container" class="movie-grid">
+        <p id="no-favorites-message" class="hidden">Henüz favori filminiz yok.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='common.js') }}"></script>
+<script src="{{ url_for('static', filename='favorites.js') }}"></script>
+
+{% endblock %}

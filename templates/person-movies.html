@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if person_type == 'actor' %}
+        {{ person_name }} Filmleri (Oyuncu)
+    {% elif person_type == 'director' %}
+        {{ person_name }} Filmleri (Yönetmen)
+    {% else %}
+        Kişi Filmleri
+    {% endif %}
+    | Film Veritabanı
+{% endblock %}
+
+{% block nav_links %}
+    <a href="/favorites" id="favorites-link" class="action-btn">Favorilerim</a>
+{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="page-header">
+        <h1 id="person-title">
+            {% if person_type == 'actor' %}
+                <i class="fas fa-mask"></i> {{ person_name }} Filmleri (Oyuncu)
+            {% elif person_type == 'director' %}
+                <i class="fas fa-video"></i> {{ person_name }} Filmleri (Yönetmen)
+            {% else %}
+                <i class="fas fa-user"></i> {{ person_name }} Filmleri
+            {% endif %}
+        </h1>
+        <p class="subtitle">Bu kişi tarafından rol alınan/yönetilen filmlerin listesi.</p>
+    </div>
+
+    <div id="movies-container" class="movies-grid">
+        </div>
+    
+    <div id="message-area"></div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='common.js') }}"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const personName = urlParams.get('name');
+        const personType = urlParams.get('type');
+        
+        const container = document.getElementById('movies-container');
+        const messageArea = document.getElementById('message-area');
+
+        // (Eksik parametre kontrolü...)
+        if (!personName || !personType || (personType !== 'actor' && personType !== 'director')) {
+            messageArea.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i><h2>Eksik Bilgi</h2><p>Kişi adı veya türü (actor/director) eksik.</p></div>`;
+            return;
+        }
+        
+        // Yükleme durumu
+        container.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>${personName} için filmler yükleniyor...</p></div>`;
+        messageArea.innerHTML = ''; 
+
+        // Kullanıcı durumunu kontrol et ve favorileri çek (common.js)
+        if (typeof checkUserStatus === 'function') {
+            await checkUserStatus();
+        }
+
+        try {
+            let apiEndpoint = personType === 'actor' 
+                ? `/api/movies_by_actor/${encodeURIComponent(personName)}`
+                : `/api/movies_by_director/${encodeURIComponent(personName)}`;
+
+            const response = await fetch(apiEndpoint);
+            if (!response.ok) throw new Error(`API hatası! Durum kodu: ${response.status}`);
+            
+            const movies = await response.json();
+            container.innerHTML = ''; 
+
+            if (movies && movies.length > 0) {
+                // ⭐ SADECE UYUMLU KART OLUŞTURMA BÖLÜMÜ ⭐
+                movies.forEach(movie => {
+                    const filmId = movie.film_id;
+                    const isFavorite = userFavorites.includes(filmId);
+                    
+                    // common.js'in beklediği temel veriyi gönderiyoruz
+                    const movieData = {
+                        film_id: filmId,        
+                        title: movie.title,     
+                        poster_url: movie.poster_url 
+                        // Yıl ve puanı GÖNDERMİYORUZ/KULLANMIYORUZ.
+                    };
+                    
+                    // common.js'teki createMovieCard'ı çağırıyoruz. 
+                    // Bu kart, diğer sayfalardakiyle BİREBİR aynı olacaktır.
+                    const card = createMovieCard(movieData, isFavorite); 
+                    
+                    container.appendChild(card);
+                });
+                
+                // Favori butonlarını güncelle
+                if (typeof updateAllLikeButtons === 'function') {
+                    updateAllLikeButtons();
+                }
+
+            } else {
+                // Film bulunamadı durumu
+                messageArea.innerHTML = `<div class="error-state"><i class="fas fa-film"></i><h2>Film Bulunamadı</h2><p>Veritabanında <strong>${personName}</strong> ${personType === 'actor' ? 'oyuncusunun' : 'yönetmeninin'} filmi bulunamadı.</p></div>`;
+            }
+            
+        } catch (error) {
+            console.error('Kişiye göre film çekme hatası:', error);
+            container.innerHTML = ''; 
+            messageArea.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-circle"></i><h2>Yükleme Hatası</h2><p>Filmler yüklenirken bir hata oluştu: ${error.message}</p><button onclick="location.reload()" class="retry-btn">Tekrar Dene</button></div>`;
+        }
+    });
+    </script>
+{% endblock %}

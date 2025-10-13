@@ -1,0 +1,1670 @@
+/* ========================================
+   MODERN FİLM ÖNERİ SİSTEMİ - OPTIMIZE EDİLMİŞ CSS
+   ======================================== */
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --dark-gradient: linear-gradient(135deg, rgba(20, 20, 40, 0.95), rgba(40, 20, 60, 0.9));
+    --card-gradient: linear-gradient(135deg, rgba(30, 30, 50, 0.9), rgba(50, 30, 70, 0.8));
+    --bg-dark: #0a0a0f;
+    --bg-light-dark: #1a1a2e;
+    --text-color: #f5f5f5;
+    --light-text-color: #b0b0b0;
+    --accent-color: #bb86fc;
+    --accent-pink: #ff1493;
+    --accent-gold: #ffd700;
+}
+
+/* ========================================
+   GENEL STIL
+   ======================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+    background-attachment: fixed;
+    color: var(--text-color);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(138, 43, 226, 0.1), transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(255, 20, 147, 0.1), transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+}
+.hero-section {
+    color: white;
+    padding: 50px 20px;
+    text-align: center;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.hero-section h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.hero-section p {
+    font-size: 1.2rem;
+}
+
+/* ========================================
+   HEADER
+   ======================================== */
+header {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95));
+    backdrop-filter: blur(20px);
+    color: white;
+    padding: 17px 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+.header-top h1 {
+    font-size: 2.2em;
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -1px;
+    white-space: nowrap;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.header-top h1 a {
+    color: #ffffff;
+    text-decoration: none;
+    background: linear-gradient(135deg, #fff, #f0e6ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.3s ease;
+}
+
+.header-top h1 a:hover {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    transform: scale(1.02);
+}
+
+.search-filter-area {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: flex-start;
+}
+
+#back-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(10px);
+}
+
+#back-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #fff;
+    transform: translateX(-5px);
+    box-shadow: 0 5px 20px rgba(255, 255, 255, 0.2);
+}
+
+.right-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(255, 255, 255, 0.2);
+}
+
+.action-btn.primary {
+    background: var(--secondary-gradient);
+    border: 2px solid transparent;
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+}
+
+.action-btn.primary:hover {
+    box-shadow: 0 6px 25px rgba(245, 87, 108, 0.6);
+}
+
+/* Kullanıcı Bilgileri */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.user-info:hover {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.user-avatar:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.user-name-display {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 15px;
+    white-space: nowrap;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 110%;
+    right: 0;
+    background: rgba(26, 26, 46, 0.98);
+    border: 1px solid rgba(187, 134, 252, 0.3);
+    border-radius: 15px;
+    padding: 10px;
+    min-width: 160px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px) scale(0.95);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.dropdown-content.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+.user-info:hover .dropdown-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.dropdown-logout-link {
+    display: block;
+    color: #ff6b6b;
+    text-decoration: none;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    border-left: 3px solid transparent;
+}
+
+.dropdown-logout-link:hover {
+    background: rgba(255, 107, 107, 0.15);
+    border-left-color: #ff6b6b;
+    padding-left: 22px;
+    color: #ff8a8a;
+}
+
+/* ========================================
+   ARAMA VE FİLTRELER
+   ======================================== */
+.search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    max-width: 1000px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+}
+
+.search-container input[type="text"],
+.search-container select {
+    padding: 12px 20px;
+    border-radius: 25px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    min-width: 180px;
+}
+
+.search-container input[type="text"]:focus,
+.search-container select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 20px rgba(187, 134, 252, 0.3);
+}
+
+.search-container input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.search-container select option {
+    background: #1a1a2e;
+    color: white;
+}
+
+#search-button {
+    padding: 12px 30px;
+    background: var(--secondary-gradient);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+}
+
+#search-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(245, 87, 108, 0.6);
+}
+
+/* ========================================
+   MAIN CONTENT
+   ======================================== */
+main {
+    padding: 60px 40px;
+    max-width: 1600px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+h2, #recommendations-title, #latest-title, #search-results-title, #results-title {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    margin: 40px 0;
+    background: linear-gradient(135deg, #fff, #bb86fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   FİLM KARTLARI - YATAY SCROLL
+   ======================================== */
+.movie-scroll-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 60px;
+}
+
+.scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(187, 134, 252, 0.2);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(187, 134, 252, 0.5);
+    color: #fff;
+    font-size: 2em;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scroll-btn:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 5px 25px rgba(187, 134, 252, 0.5);
+}
+
+.scroll-btn.left {
+    left: -25px;
+}
+
+.scroll-btn.right {
+    right: -25px;
+}
+
+.movie-scroll {
+    display: flex;
+    gap: 25px;
+    overflow-x: auto;
+    padding: 20px 10px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) transparent;
+}
+
+.movie-scroll::-webkit-scrollbar {
+    height: 10px;
+}
+
+.movie-scroll::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.movie-scroll::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 10px;
+}
+
+.movie-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-pink);
+}
+
+/* ========================================
+   FİLM KARTLARI - GRID GÖRÜNÜM (ARAMA SONUÇLARI VE FAVORİLER)
+   ======================================== */
+.movie-grid,
+#search-results,
+#favorites-container,
+#recommendations-list.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 30px;
+    padding: 20px 0;
+    width: 100%;
+}
+
+/* ========================================
+   FİLM KARTI ORTAK STİLLER
+   ======================================== */
+.movie-card {
+    background: var(--card-gradient);
+    border-radius: 20px;
+    padding: 15px;
+    text-align: center;
+    transition: all 0.4s ease;
+    border: 1px solid rgba(187, 134, 252, 0.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    width: 100%;
+    height: auto;
+}
+
+.movie-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(138, 43, 226, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.movie-card:hover::before {
+    opacity: 1;
+}
+
+.movie-card:hover {
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 15px 50px rgba(138, 43, 226, 0.5);
+    border-color: var(--accent-color);
+}
+
+.movie-card img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease;
+}
+
+.movie-card:hover img {
+    transform: scale(1.05);
+}
+
+.movie-card h3,
+.movie-card p {
+    padding: 15px 10px;
+    margin: 0;
+    font-size: 1.05em;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    line-height: 1.4;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Scroll görünümünde kartlar */
+.movie-scroll .movie-card {
+    flex: 0 0 220px;
+}
+
+/* Ana film kartı (büyük) */
+.main-movie-card {
+    flex: 0 0 350px;
+}
+
+.main-movie-card img {
+    height: 500px;
+}
+
+/* ========================================
+   LIKE BUTTON
+   ======================================== */
+.like-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.3em;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.like-button:hover {
+    background: rgba(255, 20, 147, 0.3);
+    border-color: #ff1493;
+    transform: scale(1.15);
+}
+
+.like-button.liked {
+    background: var(--accent-pink);
+    border-color: var(--accent-pink);
+    animation: heartBeat 0.5s ease;
+}
+
+@keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.2); }
+    50% { transform: scale(1.1); }
+}
+
+/* ========================================
+   ARAMA SONUÇLARI MESAJLARI
+   ======================================== */
+.no-results,
+.error-message {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 1.3em;
+    color: var(--light-text-color);
+    grid-column: 1 / -1;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    border: 2px dashed rgba(187, 134, 252, 0.3);
+}
+
+.error-message {
+    color: #ff6b6b;
+    border-color: rgba(255, 107, 107, 0.3);
+}
+
+/* ============================================
+   FİLM DETAY SAYFASI STİLLERİ
+   ============================================ */
+/* style.css dosyasına ekleyin */
+
+.trailer-section {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    padding: 0 25px; 
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.trailer-section h2 {
+    font-size: 1.8em;
+    color: #FFD700; /* Altın Sarısı */
+    margin-bottom: 15px;
+    border-bottom: 3px solid #333; /* Altına ince bir çizgi */
+    padding-bottom: 8px;
+    display: inline-block; /* Çizginin sadece metin altına gelmesini sağlar */
+}
+
+.video-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 oranı */
+    height: 0;
+    overflow: hidden;
+    border-radius: 12px; /* Köşeleri daha da yumuşatır */
+    /* Gölge efektini güçlendiriyoruz */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); 
+    background-color: #000;
+}
+
+/* iframe için responsive ayarlar aynı kalmalı */
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+#movie-detail-section {
+    padding: 2rem 0;
+    min-height: calc(100vh - 80px);
+}
+
+/* Film Detay Kartı */
+.movie-detail {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* Üst Kısım: Poster + Bilgiler */
+.detail-header {
+    display: flex;
+    gap: 3rem;
+    margin-bottom: 3rem;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Film Posteri */
+.detail-poster {
+    flex-shrink: 0;
+    position: relative;
+    width: 300px;
+    height: 450px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.detail-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.detail-poster:hover img {
+    transform: scale(1.05);
+}
+
+/* Favori Butonu (Poster Üzerinde) */
+.detail-poster .favorite-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.detail-poster .favorite-btn i {
+    font-size: 24px;
+    color: #fff;
+}
+
+.detail-poster .favorite-btn:hover {
+    background: rgba(220, 53, 69, 0.9);
+    transform: scale(1.1);
+}
+
+.detail-poster .favorite-btn.liked {
+    background: rgba(220, 53, 69, 0.9);
+}
+
+.detail-poster .favorite-btn.liked i {
+    color: #fff;
+}
+
+/* Sağ Taraf: Bilgiler + Özet + Oyuncular */
+.detail-info-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Film Başlığı ve Temel Bilgiler */
+.detail-basic-info {
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+    padding-bottom: 1.5rem;
+}
+
+.movie-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.movie-year {
+    font-size: 2rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.6);
+    margin-left: 0.5rem;
+}
+
+/* Meta Bilgiler (IMDb, Tür, Yönetmen) */
+.movie-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.8);
+}
+
+.meta-item i {
+    color: #ffc107;
+    font-size: 1.2rem;
+}
+
+.imdb-rating {
+    font-weight: 600;
+    color: #ffc107;
+}
+
+/* Özet Bölümü */
+.overview-section {
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border-left: 4px solid #e50914;
+}
+
+.overview-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.overview-section h2 i {
+    color: #e50914;
+}
+
+.overview-text {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: rgba(255,255,255,0.8);
+}
+
+/* Oyuncular Bölümü */
+.cast-section {
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border-left: 4px solid #0d6efd;
+}
+
+.cast-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cast-section h2 i {
+    color: #0d6efd;
+}
+
+.cast-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.cast-member {
+    background: rgba(255,255,255,0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.9);
+    transition: all 0.3s ease;
+}
+
+.cast-member:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+}
+
+.no-info {
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+}
+
+/* ============================================
+   BENZER FİLMLER BÖLÜMÜ
+   ============================================ */
+
+/* 🎬 BENZER FİLMLER BÖLÜMÜ */
+.similar-movies-section {
+    margin-top: 50px;
+    text-align: center;
+}
+
+.similar-movies-section h2 {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    text-shadow: 0 0 8px rgba(255,255,255,0.2);
+}
+
+/* 🔹 Filmleri Yanyana Diz */
+#similar-movies-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px;
+}
+
+/* 🎞️ Her bir film kartı */
+.similar-movie-card {
+    width: 180px;
+    background: #1b1b1b;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.similar-movie-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+}
+
+.similar-movie-card img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+/* Benzer Filmler Grid */
+.similar-movies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+.similar-movie-card h4 {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Benzer Film Kartları Grid */
+.movies-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 film yan yana */
+    gap: 2rem;
+    padding: 1rem 0;
+}
+
+.movie-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: pointer;
+}
+
+.movie-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(229, 9, 20, 0.3);
+    background: rgba(255,255,255,0.08);
+}
+.movie-carousel {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+/* Film Posteri */
+.movie-poster {
+    position: relative;
+    width: 100%;
+    padding-top: 150%; /* 2:3 aspect ratio */
+    overflow: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.movie-poster img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.movie-card:hover .movie-poster img {
+    transform: scale(1.1);
+}
+
+/* Overlay (Detaylar Butonu) */
+.movie-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.movie-card:hover .movie-overlay {
+    opacity: 1;
+}
+
+.details-btn {
+    background: #e50914;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.details-btn:hover {
+    background: #f40612;
+    transform: scale(1.05);
+}
+
+/* Film Bilgileri */
+.movie-info {
+    padding: 1rem;
+    position: relative;
+}
+
+.movie-info .movie-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+}
+
+.movie-info .movie-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 0.75rem;
+}
+
+.movie-year {
+    font-size: 0.875rem;
+}
+
+.movie-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #ffc107;
+}
+
+.movie-rating i {
+    font-size: 0.75rem;
+}
+
+/* Like Butonu */
+.movie-info .like-button {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.movie-info .like-button i {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.7);
+    transition: color 0.3s ease;
+}
+
+.movie-info .like-button:hover {
+    background: rgba(220, 53, 69, 0.2);
+    border-color: #dc3545;
+    transform: scale(1.1);
+}
+
+.movie-info .like-button.liked {
+    background: rgba(220, 53, 69, 0.3);
+    border-color: #dc3545;
+}
+
+.movie-info .like-button.liked i {
+    color: #dc3545;
+}
+
+/* ============================================
+   YÜKLEME VE HATA DURUMLARI
+   ============================================ */
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.loading-spinner {
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top: 4px solid #e50914;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+    color: rgba(255,255,255,0.7);
+    font-size: 1rem;
+}
+
+.no-similar-movies,
+.error-message {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: rgba(255,255,255,0.6);
+}
+
+.no-similar-movies i,
+.error-message i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: rgba(255,255,255,0.3);
+}
+
+.no-similar-movies p,
+.error-message p {
+    font-size: 1.1rem;
+}
+
+/* Hata Durumu */
+.error-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.error-state i {
+    font-size: 4rem;
+    color: #dc3545;
+    margin-bottom: 1.5rem;
+}
+
+.error-state h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+.error-state p {
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 2rem;
+}
+
+.back-home-btn,
+.retry-btn {
+    background: #e50914;
+    color: white;
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.back-home-btn:hover,
+.retry-btn:hover {
+    background: #f40612;
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   RESPONSİVE TASARIM
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .detail-header {
+        gap: 2rem;
+    }
+    
+    .detail-poster {
+        width: 250px;
+        height: 375px;
+    }
+    
+    .movies-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .detail-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 2rem;
+    }
+    
+    .detail-poster {
+        width: 100%;
+        max-width: 300px;
+        height: 450px;
+    }
+    
+    .movie-title {
+        font-size: 2rem;
+    }
+    
+    .movie-meta {
+        justify-content: center;
+        gap: 1.5rem;
+    }
+    
+    .movies-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    
+    .similar-movies-section h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #movie-detail-section {
+        padding: 1rem 0;
+    }
+    
+    .movie-detail {
+        padding: 0 1rem;
+    }
+    
+    .detail-header {
+        padding: 1.5rem;
+    }
+    
+    .movie-title {
+        font-size: 1.5rem;
+    }
+    
+    .movie-year {
+        font-size: 1.25rem;
+    }
+    
+    .movies-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+.hidden {
+    display: none !important;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+@media (max-width: 1024px) {
+    main {
+        padding: 40px 20px;
+    }
+    
+    .movie-grid,
+    #search-results,
+    #favorites-container {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 15px 20px;
+    }
+    
+    .header-top {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .header-top h1 {
+        font-size: 1.8em;
+    }
+    
+    .search-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .search-container input,
+    .search-container select {
+        width: 100%;
+        max-width: 350px;
+        min-width: auto;
+    }
+    
+    .movie-grid,
+    #search-results,
+    #favorites-container {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px;
+    }
+    
+    .movie-card img {
+        height: 260px;
+    }
+    
+    .detail-header {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 25px;
+    }
+    
+    .detail-poster {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+    
+    .detail-info h2 {
+        font-size: 2em;
+        text-align: center;
+    }
+    
+    h2, #recommendations-title, #latest-title, #search-results-title {
+        font-size: 2em;
+    }
+}
+
+@media (max-width: 480px) {
+    .movie-grid,
+    #search-results,
+    #favorites-container {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .movie-card img {
+        height: 220px;
+    }
+    
+    .movie-card h3,
+    .movie-card p {
+        font-size: 0.95em;
+        padding: 12px 8px;
+        min-height: 50px;
+    }
+    
+    .scroll-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5em;
+    }
+    
+    .like-button {
+        width: 38px;
+        height: 38px;
+        font-size: 1.1em;
+        top: 15px;
+        right: 15px;
+    }
+    
+    .detail-overview,
+    .detail-cast {
+        padding: 20px;
+    }
+}
+/* Modal (Pop-up) Stilleri */
+.modal {
+    display: none; /* Varsayılan olarak gizli */
+    position: fixed; 
+    z-index: 1000; /* Diğer her şeyin üstünde olmalı */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.9); /* Yarı saydam siyah arka plan */
+}
+
+.modal-content {
+    background-color: #000; /* İçerik arka planı siyah */
+    margin: 5% auto; /* Ortalamak için üst boşluk */
+    padding: 20px;
+    width: 80%; /* Genişlik */
+    max-width: 900px; /* Maksimum genişlik */
+    position: relative;
+    border-radius: 10px;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+    margin-bottom: 10px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #fff;
+    text-decoration: none;
+}
+/* ============================================
+   FRAGMAN MODAL STİLLERİ
+   ============================================ */
+
+/* Film Posterini içeren ana konteyneri ayarlayın */
+.detail-poster {
+    /* Posterin üzerine eleman konumlandırmak için gereklidir */
+    position: relative;
+    /* Fragman butonu için hover efekti, üzerine gelindiğinde karartma gibi */
+    overflow: hidden; 
+}
+
+/* Fragman düğmesini (trailer-section) posterin üzerine ortala */
+.trailer-section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center; /* Yatayda ortala */
+    align-items: center;   /* Dikeyde ortala */
+    background-color: rgba(0, 0, 0, 0.4); /* Hafif karartma */
+    opacity: 0; /* Başlangıçta gizle */
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+    z-index: 10; /* Poster ve diğer butonların üzerinde olmasını sağlar */
+}
+
+/* Hover edildiğinde karartmayı ve butonu göster */
+.detail-poster:hover .trailer-section {
+    opacity: 1;
+}
+
+/* Fragmanı İzle butonu */
+.trailer-btn {
+    background: rgba(220, 20, 60, 0.9); /* Kırmızımsı bir renk */
+    color: white;
+    border: 3px solid white;
+    padding: 15px 30px;
+    border-radius: 50px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* Karartma katmanının hover'ında butona basılabilmesi için */
+    pointer-events: auto; 
+}
+
+.trailer-btn:hover {
+    background: crimson;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.trailer-btn i {
+    font-size: 1.5em;
+}
+
+/* Favori butonunun fragman butonunun arkasında kalmaması için z-index ayarı */
+.favorite-btn {
+    z-index: 20; /* Fragman bölümünden daha yüksek bir değer */
+}
+/* Modal Container */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    position: relative;
+    background-color: #1a1a1a;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 1000px;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+}
+
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #fff;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10000;
+    transition: color 0.3s ease;
+}
+
+.close-button:hover {
+    color: #e50914;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+}
+
+/* Tıklanabilir oyuncu/yönetmen linkleri */
+.cast-member.clickable,
+.director-link.clickable {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    margin: 0.3rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 20px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.cast-member.clickable:hover,
+.director-link.clickable:hover {
+    background: linear-gradient(135deg, #764ba2, #667eea);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+.yorumlar-section {
+    margin-top: 40px;
+    padding: 20px;
+    background: #1e1e1e;
+    border-radius: 12px;
+    color: #fff;
+}
+
+#yorum-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#yorum-text {
+    width: 100%;
+    min-height: 70px;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    resize: vertical;
+}
+
+#yorum-ekle-btn {
+    align-self: flex-end;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    background: #ff4d6d;
+    color: #fff;
+    cursor: pointer;
+}
+
+.yorum-card {
+    background: #2b2b2b;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+.yorum-user {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+.yorum-text {
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.yorum-actions {
+    margin-top: 6px;
+    display: flex;
+    gap: 10px;
+}
+
+.yorum-actions button {
+    background: #444;
+    color: #fff;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+/* Yorum Başlığı ve Beğeni Alanının Yan Yana Durması */
+.yorum-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Beğeni Butonu Stilleri */
+.begeni-butonu {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+    padding: 5px 8px; /* Tıklanabilir alanı genişlet */
+    border-radius: 5px;
+}
+
+.begeni-butonu:hover {
+    background-color: #f7f7f7;
+}
+
+/* Giriş yapılmamış veya deaktif simge */
+.disabled-begeni {
+    cursor: default;
+}
+
+/* Beğenilmemiş kalp (Gri/Boş) */
+.begeni-simgesi.begenilmedi i {
+    color: #999; 
+}
+
+/* Beğenilmiş kalp (Kırmızı/Dolu) */
+.begeni-simgesi.begendi i {
+    color: #ff4d4f; /* Kırmızı */
+}
+
+/* Beğeni Sayısı Metni */
+.begeni-sayisi {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #555;
+}

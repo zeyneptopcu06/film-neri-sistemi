@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Arama Sonuçları - Film Öneri Sistemi{% endblock %}
+
+{% block nav_links %}
+    <a href="/favorites" class="action-btn">Favorilerim</a>
+{% endblock %}
+
+{% block content %}
+<section id="results-section">
+    <h2 id="search-results-title">Arama Sonuçları</h2>
+    <div id="search-results" class="movie-grid">
+        <!-- Arama sonuçları buraya gelecek -->
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='common.js') }}"></script>
+
+<script src="{{ url_for('static', filename='search.js') }}"></script>
+{% endblock %}

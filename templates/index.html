@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Ana Sayfa - Film Öneri Sistemi{% endblock %}
+
+{% block nav_links %}
+    <a href="/favorites" id="favorites-link" class="action-btn">Favorilerim</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="hero-text">
+        <h1>Film Öneri Sistemine Hoş Geldin!</h1>
+        <p>Senin zevkine uygun filmleri keşfetmeye başla.</p>
+    </div>
+</section>
+<section class="movie-sections">
+    <h2>Popüler Filmler</h2>
+    <div class="movie-scroll-container">
+        <button class="scroll-btn left" data-target="popular-list">&#10094;</button>
+        <div id="popular-list" class="movie-scroll"></div>
+        <button class="scroll-btn right" data-target="popular-list">&#10095;</button>
+    </div>
+
+    <h2>En Yeni Çıkan Filmler</h2>
+    <div class="movie-scroll-container">
+        <button class="scroll-btn left" data-target="latest-list">&#10094;</button>
+        <div id="latest-list" class="movie-scroll"></div>
+        <button class="scroll-btn right" data-target="latest-list">&#10095;</button>
+    </div>
+     <h2>Keşfet: Rastgele Filmler</h2>
+<div class="movie-scroll-container">
+    <button class="scroll-btn left" data-target="random-explore-list">&#10094;</button>
+    <div id="random-explore-list" class="movie-scroll"></div>
+    <button class="scroll-btn right" data-target="random-explore-list">&#10095;</button>
+</div>
+    <h2>Sizin İçin Önerilen Filmler</h2>
+<div class="movie-scroll-container">
+    <button class="scroll-btn left" data-target="recommend-list">&#10094;</button>
+    <div id="recommend-list" class="movie-scroll"></div>
+    <button class="scroll-btn right" data-target="recommend-list">&#10095;</button>
+</div>
+    <h2>Senin Favori Türlerine Göre Önerilen Filmler</h2>
+<div class="movie-scroll-container">
+    <button class="scroll-btn left" data-target="genre-recommend-list">&#10094;</button>
+    <div id="genre-recommend-list" class="movie-scroll"></div>
+    <button class="scroll-btn right" data-target="genre-recommend-list">&#10095;</button>
+</div>
+
+
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='common.js') }}"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Film Detayı - Film Öneri Sistemi{% endblock %}
+
+{% block nav_links %}
+    <a href="/favorites" id="favorites-link" class="action-btn">Favorilerim</a>
+{% endblock %}
+
+{% block content %}
+<section id="movie-detail-section">
+    <!-- Film detayları ve benzer filmler buraya JavaScript tarafından yüklenecek -->
+    <div id="detail-content">
+        <!-- JavaScript tarafından doldurulacak -->
+    </div>
+</section>
+<div id="trailerModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <div id="modal-video-container" class="video-container"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='common.js') }}"></script>
+<script src="{{ url_for('static', filename='movie-detail.js') }}"></script>
+{% endblock %}

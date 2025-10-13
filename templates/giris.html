@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap - Tamama Film Öneri Sistemi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body class="login-page">
+    <div class="bg-animation">
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+    </div>
+
+    <header>
+        <h1><a href="/">🎬Filma</a></h1>
+    </header>
+
+    <main>
+        <div class="auth-container">
+            <section id="auth-section">
+                <div class="auth-header">
+                    <h2>Giriş Yap</h2>
+                    <p>Hesabınıza giriş yapın</p>
+                </div>
+                
+                <form id="login-form" class="auth-form">
+                    <div class="input-group">
+                        <input type="text" id="login-username" placeholder="Kullanıcı Adı" required>
+                        <span class="input-icon">👤</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="password" id="login-password" placeholder="Şifre" required>
+                        <span class="input-icon">🔒</span>
+                        <button type="button" class="password-toggle" onclick="togglePassword('login-password')">🙈</button>
+                    </div>
+                    
+                    <div class="form-options">
+                        <label class="remember-me">
+                            <input type="checkbox" id="remember">
+                            <span>Beni hatırla</span>
+                        </label>
+                        <a href="#" class="forgot-link">Şifremi unuttum?</a>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn">
+                        <span class="btn-text">Giriş Yap</span>
+                        <div class="loading-spinner" style="display: none;"></div>
+                    </button>
+                </form>
+                
+                <div id="login-message" class="message"></div>
+                
+                <div class="auth-divider">
+                    <span>veya</span>
+                </div>
+                
+                <p class="auth-link">Hesabın yok mu? <a href="/kayit">Kayıt Ol</a></p>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Filma</p>
+    </footer>
+
+<script type="module" src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>
