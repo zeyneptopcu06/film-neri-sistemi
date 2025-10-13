@@ -1,4 +1,5 @@
 Flask
+flask_cors  # ⬅️ Bunu ekleyin
 gunicorn
 # Kullandığınız veritabanı sürücüsünü ekleyin:
 # Eğer PostgreSQL kullanıyorsanız:
