@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, render_template, session
 from flask_cors import CORS
-from flask_bcrypt import Bcrypt
+import bcrypt
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
@@ -9,6 +9,9 @@ from recommender_core import get_recommendations, initialize_recommendation_syst
 import pandas as pd
 from functools import wraps
 from flask import session, redirect, url_for
+import os
+from flask_mail import Mail, Message
+
 
 def login_required(f):
     @wraps(f)
@@ -81,9 +84,17 @@ def get_movie_id_by_title_from_db(conn, cursor, title):
 
 app = Flask(__name__)
 CORS(app)
-bcrypt = Bcrypt(app)
 app.secret_key = 'senin-cok-gizli-anahtarın-buraya-gelsin'
+app.config.update(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USERNAME='topcuzeynep445@gmail.com',
+    MAIL_PASSWORD='mfoa hdcj dpzm ctgb',  # Gmail için “Uygulama şifresi” kullan
+    MAIL_DEFAULT_SENDER=('Filma Destek', 'gmail_adresin@gmail.com')
+)
 
+mail = Mail(app)
 # HTML sayfaları
 @app.route("/")
 def home():
@@ -197,28 +208,40 @@ def giris():
     data = request.get_json()
     email = data.get("email")
     sifre = data.get("sifre")
+    remember = data.get("remember", False)
 
     if not email or not sifre:
         return jsonify({"hata": "E-posta ve şifre gerekli."}), 400
 
     conn = get_connection()
-    if conn:
-        cursor = conn.cursor()
-        try:
-            cursor.execute("SELECT sifre FROM kullanicilar WHERE email = %s", (email,))
-            result = cursor.fetchone()
-            
-            if result and bcrypt.check_password_hash(result[0], sifre):
-                session['email'] = email
-                return jsonify({"mesaj": "Giriş başarılı!"}), 200
-            else:
-                return jsonify({"hata": "Geçersiz e-posta veya şifre."}), 401
-        except Exception as e:
-            return jsonify({"hata": f"Bir hata oluştu: {e}"}), 500
-        finally:
-            cursor.close()
-            conn.close()
-    return jsonify({"hata": "Veritabanı bağlantı hatası"}), 500
+    if not conn:
+        return jsonify({"hata": "Veritabanı bağlantı hatası"}), 500
+
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT sifre FROM kullanicilar WHERE email = %s", (email,))
+        result = cursor.fetchone()
+        
+        if not result:
+            # E-posta bulunamadı
+            return jsonify({"hata": "E-posta adresi bulunamadı."}), 404
+
+        stored_sifre = result[0]
+        if not bcrypt.check_password_hash(stored_sifre, sifre):
+            # Şifre yanlış
+            return jsonify({"hata": "Şifre hatalı."}), 401
+
+        # Başarılı giriş
+        session['email'] = email
+        session.permanent = bool(remember)
+        return jsonify({"mesaj": "Giriş başarılı!"}), 200
+
+    except Exception as e:
+        return jsonify({"hata": f"Sunucu hatası: {e}"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 
 @app.route("/api/logout", methods=["POST"])
 def logout():
@@ -1278,6 +1301,92 @@ def yorum_begeni(yorum_id):
             conn.rollback()
             conn.close()
         return jsonify({'error': 'İşlem sırasında bir hata oluştu'}), 500
+    
+from itsdangerous import URLSafeTimedSerializer
+
+s = URLSafeTimedSerializer(app.secret_key)
+from datetime import timedelta
+
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # 30 gün kalıcı
+
+@app.route("/api/forgot_password", methods=["POST"])
+def forgot_password():
+    data = request.get_json()
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"hata": "E-posta adresi gerekli."}), 400
+
+    conn = get_connection()
+    if not conn:
+        return jsonify({"hata": "Veritabanı bağlantı hatası."}), 500
+
+    cursor = conn.cursor()
+    try:
+        # Kullanıcı var mı kontrol et
+        cursor.execute("SELECT id FROM kullanicilar WHERE email = %s", (email,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"hata": "Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı."}), 404
+
+        # Token oluştur
+        token = s.dumps(email, salt="password-reset-salt")
+
+        # Şifre sıfırlama linki oluştur
+        reset_url = f"http://localhost:5000/sifre_sifirla/{token}"
+
+        # Mail gönder
+        msg = Message("🔑 Şifre Sıfırlama Talebi", recipients=[email])
+        msg.body = f"""
+Merhaba,
+Şifrenizi sıfırlamak için aşağıdaki bağlantıya tıklayın:
+{reset_url}
+
+Bu bağlantı 30 dakika boyunca geçerlidir.
+Eğer bu talebi siz oluşturmadıysanız, bu e-postayı dikkate almayabilirsiniz.
+"""
+        mail.send(msg)
+
+        return jsonify({"mesaj": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi."}), 200
+
+    except Exception as e:
+        return jsonify({"hata": f"Sunucu hatası: {e}"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+@app.route("/sifre_sifirla/<token>", methods=["GET", "POST"])
+def sifre_sifirla(token):
+    try:
+        email = s.loads(token, salt="password-reset-salt", max_age=1800)  # 30 dakika
+    except Exception:
+        return "Token geçersiz veya süresi dolmuş.", 400
+
+    if request.method == "GET":
+        # HTML sayfası göster
+        return render_template("sifre_sifirla.html", email=email)
+
+    # POST - yeni şifre al
+    data = request.get_json()
+    yeni_sifre = data.get("sifre")
+
+    if not yeni_sifre:
+        return jsonify({"hata": "Yeni şifre gerekli."}), 400
+
+    hashed = bcrypt.generate_password_hash(yeni_sifre).decode('utf-8')
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE kullanicilar SET sifre = %s WHERE email = %s", (hashed, email))
+        conn.commit()
+        return jsonify({"mesaj": "Şifre başarıyla güncellendi."}), 200
+    except Exception as e:
+        return jsonify({"hata": f"Bir hata oluştu: {e}"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 if __name__ == '__main__':
     initialize_recommendation_system()
     app.run(debug=True)
