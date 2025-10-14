@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, request, render_template, session
 from flask_cors import CORS
-import bcrypt
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
@@ -11,7 +10,7 @@ from functools import wraps
 from flask import session, redirect, url_for
 import os
 from flask_mail import Mail, Message
-
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def login_required(f):
     @wraps(f)
@@ -188,7 +187,7 @@ def kayit():
             if cursor.fetchone():
                 return jsonify({"hata": "Bu e-posta zaten kayıtlı."}), 409
 
-            hashed_sifre = bcrypt.generate_password_hash(sifre).decode('utf-8')
+            hashed_sifre = generate_password_hash(sifre) 
             cursor.execute(
                 "INSERT INTO kullanicilar (email, sifre, username) VALUES (%s, %s, %s)",
                 (email, hashed_sifre, username)
@@ -227,7 +226,7 @@ def giris():
             return jsonify({"hata": "E-posta adresi bulunamadı."}), 404
 
         stored_sifre = result[0]
-        if not bcrypt.check_password_hash(stored_sifre, sifre):
+        if not check_password_hash(stored_sifre, sifre):
             # Şifre yanlış
             return jsonify({"hata": "Şifre hatalı."}), 401
 
@@ -1373,8 +1372,7 @@ def sifre_sifirla(token):
     if not yeni_sifre:
         return jsonify({"hata": "Yeni şifre gerekli."}), 400
 
-    hashed = bcrypt.generate_password_hash(yeni_sifre).decode('utf-8')
-
+    hashed = generate_password_hash(yeni_sifre)
     conn = get_connection()
     cursor = conn.cursor()
     try:
