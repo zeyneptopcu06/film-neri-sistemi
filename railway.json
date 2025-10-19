@@ -7,10 +7,11 @@
         "install": {
           "commands": [
             "pip install --upgrade pip",
-            "apt-get update && apt-get install -y build-essential python3-dev libpq-dev" 
+            "apt-get update && apt-get install -y build-essential python3-dev libpq-dev"
           ]
         }
       }
     }
-  }
+  },
+  "startCommand": "gunicorn api:app --bind 0.0.0.0:$PORT" 
 }
