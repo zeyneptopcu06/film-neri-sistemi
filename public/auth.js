@@ -20,46 +20,86 @@ window.togglePassword = function (inputId) {
 // ==========================================
 // LOGIN FORM
 // ==========================================
-const loginForm = document.getElementById('login-form');
-if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+document.addEventListener("DOMContentLoaded", () => {
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        const email = document.getElementById('login-username').value.trim();
-        const sifre = document.getElementById('login-password').value.trim();
-        const loginMessage = document.getElementById('login-message');
-        loginMessage.textContent = '';
+            const email = document.getElementById('login-username').value.trim();
+            const sifre = document.getElementById('login-password').value.trim();
+            const loginMessage = document.getElementById('login-message');
+            loginMessage.textContent = '';
 
-        const btn = loginForm.querySelector('.auth-btn .loading-spinner');
-        if (btn) btn.style.display = 'inline-block';
+            const btn = loginForm.querySelector('.auth-btn .loading-spinner');
+            if (btn) btn.style.display = 'inline-block';
 
-        try {
-            const res = await fetch('/api/giris', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, sifre })
-            });
+            try {
+                const res = await fetch('/api/giris', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email, 
+                        sifre,
+                        remember: document.getElementById('remember').checked
+                    })
+                });
 
-            const data = await res.json();
+                const data = await res.json();
 
-            if (res.ok) {
-                loginMessage.style.color = 'green';
-                loginMessage.textContent = data.mesaj || 'Giriş başarılı!';
-                setTimeout(() => window.location.href = '/', 1000);
-            } else {
+                if (!res.ok) {
+    loginMessage.style.display = "block"; // görünür yap
+    if (res.status === 404) {
+        loginMessage.className = "message warning";
+        loginMessage.textContent = data.hata || "E-posta adresi bulunamadı.";
+    } else if (res.status === 401) {
+        loginMessage.className = "message error";
+        loginMessage.textContent = data.hata || "Şifre hatalı.";
+    } else {
+        loginMessage.className = "message error";
+        loginMessage.textContent = data.hata || "Sunucu hatası. Tekrar deneyin.";
+    }
+} else {
+    loginMessage.className = "message success";
+    loginMessage.textContent = data.mesaj || "Giriş başarılı!";
+    setTimeout(() => window.location.href = '/', 1000);
+
+}
+            
+                
+            } catch (err) {
                 loginMessage.style.color = 'red';
-                loginMessage.textContent = data.hata || 'Giriş başarısız!';
+                loginMessage.textContent = 'Sunucu hatası. Tekrar deneyin.';
+                console.error('Login error:', err);
+            } finally {
+                if (btn) btn.style.display = 'none';
             }
-        } catch (err) {
-            loginMessage.style.color = 'red';
-            loginMessage.textContent = 'Sunucu hatası. Tekrar deneyin.';
-            console.error('Login error:', err);
-        } finally {
-            if (btn) btn.style.display = 'none';
-        }
+        });
+    }
+});
+
+const forgotLink = document.querySelector('.forgot-link');
+if (forgotLink) {
+    forgotLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const email = prompt("Lütfen kayıtlı e-posta adresinizi girin:");
+        if (!email) return;
+
+        fetch('/api/forgot_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.mesaj || data.hata || "İşlem tamamlandı.");
+        })
+        .catch(err => {
+            console.error('Forgot password error:', err);
+            alert('Sunucu hatası. Tekrar deneyin.');
+        });
     });
 }
-
 // ==========================================
 // REGISTER FORM
 // ==========================================

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Şifre Sıfırla</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .auth-container {
+            background: #fff;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .auth-container h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: 700;
+        }
+        .auth-container input {
+            width: 100%;
+            padding: 14px 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        .auth-container input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 8px rgba(102,126,234,0.4);
+            outline: none;
+        }
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .auth-btn:hover {
+            background: #5563c1;
+            transform: translateY(-2px);
+        }
+        #reset-message {
+            margin-top: 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 20px;
+            top: calc(50% - 14px);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        @media (max-width: 480px) {
+            .auth-container { padding: 30px 20px; border-radius: 12px; }
+            .auth-btn { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>Yeni Şifre Belirle</h2>
+        <form id="reset-form">
+            <input type="password" id="new-password" placeholder="Yeni Şifre" required>
+            <input type="password" id="confirm-password" placeholder="Yeni Şifre (Tekrar)" required>
+            <button type="submit" class="auth-btn">Kaydet</button>
+        </form>
+        <p id="reset-message"></p>
+    </div>
+
+<script>
+document.getElementById('reset-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const sifre = document.getElementById('new-password').value;
+    const confirm = document.getElementById('confirm-password').value;
+    const mesaj = document.getElementById('reset-message');
+
+    // Şifreler eşleşiyor mu kontrol
+    if (sifre !== confirm) {
+        mesaj.style.color = "red";
+        mesaj.textContent = "Şifreler eşleşmiyor!";
+        return;
+    }
+
+    // Şifre daha önceki ile aynı mı kontrol (API'den eski şifreyi alabilirsiniz)
+    const eskiSifre = window.localStorage.getItem('oldPassword'); // örnek: eski şifre localStorage'da saklıysa
+    if (sifre === eskiSifre) {
+        mesaj.style.color = "red";
+        mesaj.textContent = "Yeni şifre eski şifreyle aynı olamaz!";
+        return;
+    }
+
+    // Şifrede en az 1 sayı ve 1 özel karakter olmalı
+    if (!/[0-9]/.test(sifre) || !/[\W_]/.test(sifre)) {
+        mesaj.style.color = "red";
+        mesaj.textContent = "Şifre en az 1 sayı ve 1 özel karakter içermelidir!";
+        return;
+    }
+
+    try {
+        const res = await fetch(window.location.pathname, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sifre })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            mesaj.style.color = "green";
+            mesaj.textContent = "✅ Şifre başarıyla değiştirildi!";
+            window.localStorage.setItem('oldPassword', sifre); // yeni şifreyi saklayabiliriz
+            setTimeout(() => window.location.href = "/giris", 2000);
+        } else {
+            mesaj.style.color = "red";
+            mesaj.textContent = data.hata || "Bir hata oluştu!";
+        }
+    } catch (err) {
+        console.error(err);
+        mesaj.style.color = "red";
+        mesaj.textContent = "Sunucu hatası. Tekrar deneyin.";
+    }
+});
+</script>
+</body>
+</html>

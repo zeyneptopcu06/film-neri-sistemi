@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/user_status');
             const data = await response.json();
             if (data.logged_in) {
-                currentUserId = data.user_id; // Backend'den gelecek (Kritik!)
+                currentUserId = data.user_id;
                 console.log('✅ Kullanıcı bilgileri:', {
                     user_id: data.user_id,
                     email: data.email,
@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (movie && movie.baslik) {
                 renderMovieDetails(movie, isFavorite);
-                await loadSimilarMovies(currentMovieId);
-                await loadComments(currentMovieId); // Yorumları yükle
+                await loadComments(currentMovieId);
+                await loadSimilarMovies(currentMovieId); // ✅ Yorumlardan SONRA benzer filmleri yükle
                 setupTrailerModal();
             } else {
                 detailContent.innerHTML = `
@@ -93,9 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Film detaylarını render et (Bu kısım aynı kaldı)
+    // ✅ DÜZELTILMIŞ: Film detaylarını render et - Benzer filmler EN ALTTA
     function renderMovieDetails(movie, isFavorite) {
-        // ... (Bu fonksiyonun içeriği değişmedi, olduğu gibi bırakın) ...
         const castHtml = Array.isArray(movie.cast) && movie.cast.length > 0
             ? movie.cast.map(actor =>
                 `<a href="/person-movies?name=${encodeURIComponent(actor)}&type=actor" class="cast-member clickable">${actor}</a>`
@@ -128,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
+        // ✅ SIRA DEĞİŞTİRİLDİ: Yorumlar önce, benzer filmler sonra
         const detailHtml = `
             <div class="movie-detail">
                 <div class="detail-header">
@@ -180,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
 
+                <!-- ✅ YORUMLAR BÖLÜMÜ (ÜST SIRADA) -->
                 <div class="comments-section">
                     <h2><i class="fas fa-comments"></i> Yorumlar</h2>
                     
@@ -201,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
 
+                <!-- ✅ BENZERİ FİLMLER BÖLÜMÜ (ALT SIRADA) -->
                 <div id="similar-movies-section" class="similar-movies-section">
                     <h2><i class="fas fa-film"></i> Benzer Filmler</h2>
                     <div id="similar-movies-container" class="loading-state">
@@ -210,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
 
+            <!-- FRAGMAN MODAL -->
             <div id="trailerModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button">&times;</span>
@@ -223,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // ✅ GÜNCELLENMİŞ YORUMLARI YÜKLEME FONKSİYONU
+    // ✅ YORUMLARI YÜKLEME FONKSİYONU
     async function loadComments(movieId) {
         const yorumListesi = document.getElementById('yorum-listesi');
         if (!yorumListesi) return;
@@ -231,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         yorumListesi.innerHTML = '<p class="loading-text">Yorumlar yükleniyor...</p>';
 
         try {
-            // Backend'den kullanıcının beğeni durumu ile birlikte yorumları çek
             const res = await fetch(`/api/yorumlar/${movieId}`);
             if (!res.ok) throw new Error('Yorumlar yüklenemedi');
             
@@ -247,12 +249,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const likedClass = y.kullanici_begendi ? 'begendi' : 'begenilmedi';
                 const likedData = y.kullanici_begendi ? 'true' : 'false';
                 
-                // Yorum Tarihini Formatla (Tarih sütununun adı 'tarih' olarak varsayılmıştır)
                 const formattedDate = y.tarih ? new Date(y.tarih).toLocaleString('tr-TR', { 
                     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
                 }) : 'Bilinmiyor';
 
-                // Beğeni Butonu HTML'i
                 const likeButtonHtml = currentUserId ? `
                     <button class="begeni-butonu" data-yorum-id="${y.id}" data-liked="${likedData}">
                         <span class="begeni-simgesi ${likedClass}">
@@ -296,7 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }).join('');
             
-            // Yorumlar yüklendikten sonra olay dinleyicilerini tekrar ayarla
             setupCommentEventListeners(); 
 
         } catch (error) {
@@ -308,13 +307,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ✅ YORUM BEĞENİ TOGGLE FONKSİYONU
     async function begeniToggle(button) {
         const yorumId = button.dataset.yorumId;
-        let isLiked = button.dataset.liked === 'true'; // Mevcut durumu al
+        let isLiked = button.dataset.liked === 'true';
 
-        // Butonun içindeki simge ve sayı elementlerini al
         const begeniSimge = button.querySelector('.begeni-simgesi');
         const begeniSayisi = button.querySelector('.begeni-sayisi');
 
-        // Tıklamayı engelle (Çoklu tıklamayı önlemek için)
         button.disabled = true;
 
         try {
@@ -331,11 +328,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
-                // 1. Beğeni Sayısını Güncelle
                 begeniSayisi.textContent = data.begeni_sayisi;
-                
-                // 2. Simgemizi ve durumu Güncelle
-                isLiked = data.is_liked; // API'den gelen yeni beğeni durumunu al
+                isLiked = data.is_liked;
 
                 if (isLiked) {
                     begeniSimge.classList.remove('begenilmedi');
@@ -345,7 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     begeniSimge.classList.add('begenilmedi');
                 }
 
-                // data-liked özniteliğini güncelle
                 button.dataset.liked = isLiked ? 'true' : 'false';
 
             } else {
@@ -356,19 +349,17 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Beğeni işlemi sırasında bir hata oluştu:', error);
             alert('İşlem sırasında bir hata oluştu.');
         } finally {
-            // Tıklama kısıtlamasını kaldır
             button.disabled = false;
         }
     }
 
 
-    // ✅ OLAY DİNLEYİCİLERİ VE YENİ BEĞENİ İŞLEMİ ENTEGRASYONU
+    // ✅ OLAY DİNLEYİCİLERİ
     document.addEventListener('click', async (e) => {
         
-        // Yorum ekleme (Mevcut kodunuz)
+        // Yorum ekleme
         if (e.target.id === 'yorum-ekle-btn' || e.target.closest('#yorum-ekle-btn')) {
             e.preventDefault();
-            // ... (Yorum ekleme kodunuz) ...
             const textArea = document.getElementById('yorum-text');
             const text = textArea.value.trim();
             
@@ -402,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Yorum silme (Mevcut kodunuz)
+        // Yorum silme
         else if (e.target.classList.contains('yorum-delete-btn') || e.target.closest('.yorum-delete-btn')) {
             const btn = e.target.closest('.yorum-delete-btn');
             const yorumId = btn.dataset.yorumId;
@@ -421,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Yorum düzenleme (Mevcut kodunuz)
+        // Yorum düzenleme
         else if (e.target.classList.contains('yorum-edit-btn') || e.target.closest('.yorum-edit-btn')) {
             const btn = e.target.closest('.yorum-edit-btn');
             const yorumCard = btn.closest('.yorum-card');
@@ -453,10 +444,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // ✅ YORUM BEĞENİ İŞLEMİNİ ÇALIŞTIR (Yeni Kısım)
+        // Yorum beğeni işlemi
         else if (e.target.closest('.begeni-butonu')) {
             const button = e.target.closest('.begeni-butonu');
-            // Yalnızca giriş yapmış kullanıcılar beğenebilir
             if (currentUserId) {
                 begeniToggle(button);
             } else {
@@ -465,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Benzer filmleri yükle (Aynı kaldı)
+    // ✅ Benzer filmleri yükle
     async function loadSimilarMovies(movieId) {
         const container = document.getElementById('similar-movies-container');
         
@@ -500,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Benzer filmleri render et (Aynı kaldı)
+    // Benzer filmleri render et
     function renderSimilarMovies(movies) {
         const container = document.getElementById('similar-movies-container');
         
@@ -523,19 +513,16 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }).join('');
         
-        container.innerHTML = `<div class="movie-carousel">${moviesHtml}</div>`;
+        container.innerHTML = `<div class="similar-movies-grid">${moviesHtml}</div>`;
         updateAllLikeButtons();
     }
     
-    // Yorum, düzenle ve sil butonları için dinleyicileri ayarla
     function setupCommentEventListeners() {
-        // Bu fonksiyon, yorumlar yüklendikten sonra diğer aksiyon butonları için event delegation'ı halleder.
-        // Beğeni butonu, ana 'click' listener'ı (document.addEventListener('click')) tarafından yönetilir.
+        // Event delegation ile yönetiliyor
     }
 
-    // Fragman modal fonksiyonları (Aynı kaldı)
+    // Fragman modal fonksiyonları
     function setupTrailerModal() {
-        // ... (Bu fonksiyonun içeriği değişmedi, olduğu gibi bırakın) ...
         const openBtn = document.getElementById('openTrailerBtn');
         const modal = document.getElementById('trailerModal');
         const closeButton = document.querySelector('.close-button');
@@ -560,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 modalVideoContainer.innerHTML = `
                     <iframe 
-                        src="${embedUrl}"  
+                        src="${embedUrl}"  
                         frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen>
@@ -594,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await checkUserStatus();
         }
         
-        await checkCurrentUser(); // Kullanıcı ID'sini al
+        await checkCurrentUser();
         await loadMovieDetails();
         
         console.log('✅ Detay Sayfası başlatma tamamlandı.');

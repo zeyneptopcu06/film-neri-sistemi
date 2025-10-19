@@ -1385,6 +1385,4 @@ def sifre_sifirla(token):
         cursor.close()
         conn.close()
 
-if __name__ == '__main__':
     initialize_recommendation_system()
-    app.run(debug=True)
