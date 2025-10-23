@@ -3,14 +3,13 @@ import psycopg2
 from psycopg2 import sql
 import time
 import random
-
+import os # <-- BU SATIRI EKLEYİN!
 # --- BAĞLANTI BİLGİLERİ (LÜTFEN KONTROL EDİN) ---
 TMDB_API_KEY = "e56d77228a887a715c264cbc5000b8c9"  # Kendi anahtarınızı girin
-DB_NAME = "film_onerileri"
-DB_USER = "postgres"
-DB_PASSWORD = "1234"
-DB_HOST = "localhost"
-
+DB_HOST = os.environ.get("DB_HOST", "db") 
+DB_NAME = os.environ.get("DB_NAME", "film_onerileri")
+DB_USER = os.environ.get("DB_USER", "postgres")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "1234")
 # --- API AYARLARI ---
 API_TIMEOUT = 30
 API_DELAY = 0.3
@@ -305,7 +304,7 @@ def main():
 
                 if is_fetched:
                     continue
-
+                film_id = existing_film_id # Eğer mevcut ID varsa kullan, yoksa None olsun.
                 # YENİ VEYA EKSİK FİLMLER İÇİN NORMAL İŞLEM BAŞLAR
                 details, credits = fetch_movie_details_combined(movie_id, TMDB_API_KEY)
                 trailer_url = fetch_movie_trailer(movie_id, TMDB_API_KEY)

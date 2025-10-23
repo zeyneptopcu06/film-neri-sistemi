@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Veritabanı Servisi
+  db:
+    image: postgres:15-alpine
+    container_name: film_onerisi_db
+    restart: always
+    environment:
+      # Bağlantı bilgileri (web servisi buradan bağlanacak)
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: film_onerileri
+    
+    volumes:
+      # [YENİ EKLEME] Burası kritik: db_yedek.sql dosyasının bulunduğu klasörü bağlıyoruz.
+      # PostgreSQL, ilk çalıştırmada buradaki SQL dosyalarını otomatik çalıştırır.
+      - ./init_db:/docker-entrypoint-initdb.d
+      
+      # Veritabanı kalıcı olsun diye klasöre bağla (eski verileriniz burada depolanacak)
+      - postgres_data:/var/lib/postgresql/data/
+
+    ports:
+    - "5433:5432" 
+
+  # 2. Flask Uygulaması (Web Servisi)
+  web:
+    build: .  # Aynı dizindeki Dockerfile'ı kullan
+    container_name: film_onerisi_app
+    # GÜNCELLENDİ: Gunicorn zaman aşımı 300 saniyeye (5 dakika) çıkarıldı
+    command: sh -c "sleep 10 && gunicorn --bind 0.0.0.0:5000 app:app --timeout 300" 
+    restart: always
+    ports:
+      - "8080:5000" # Uygulamayı dışarıya aç
+    depends_on:
+      - db  # DB ayağa kalkmadan başlamaz
+    environment:
+      # Flask uygulaması, bu bağlantı dizesini kullanarak veritabanına erişir
+      DATABASE_URL: postgres://postgres:1234@db:5432/film_onerileri 
+      TMDB_API_KEY: ${TMDB_API_KEY} 
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}
+      
+# Veri kalıcılığı için bir volume tanımla
+volumes:
+  postgres_data:

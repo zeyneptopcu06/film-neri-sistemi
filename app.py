@@ -27,18 +27,46 @@ def login_required(f):
     return decorated_function
 
 
-# Veritabanı bilgileri
-DB_NAME = "film_onerileri"
-DB_USER = "postgres"
-DB_PASSWORD = "1234"
-DB_HOST = "localhost"
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    # Bu, flask shell'i doğrudan çalıştırdığınızda ortam değişkeni yüklenmediği için gereklidir.
+    # Kendi şifrenizi ve DB adınızı kontrol edin!
+    DATABASE_URL = "postgres://postgres:1234@db:5432/film_onerileri"
+TMDB_API_KEY = os.environ.get("TMDB_API_KEY")
+FLASK_SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
 
+# E-posta Ayarlarını Ortam Değişkenlerinden Oku
+MAIL_USERNAME = os.environ.get("SENDER_EMAIL")
+MAIL_PASSWORD = os.environ.get("SENDER_PASSWORD")
+MAIL_DEFAULT_SENDER = (os.environ.get("SENDER_NAME", "Filma Destek"), MAIL_USERNAME) 
+# NOT: SENDER_NAME'i .env'ye ekleyebilirsiniz, yoksa "Filma Destek" kullanılır.
+
+
+app = Flask(__name__)
+CORS(app)
+
+# KRİTİK GÜNCELLEME: Secret Key'i ortam değişkeninden al
+app.secret_key = FLASK_SECRET_KEY
+
+# KRİTİK GÜNCELLEME: Mail ayarlarını ortam değişkenlerinden al
+app.config.update(
+    MAIL_SERVER=os.environ.get("SMTP_SERVER"),
+    MAIL_PORT=os.environ.get("SMTP_PORT", 587), # Portu bulamazsa 587 kullan
+    MAIL_USE_TLS=True,
+    MAIL_USERNAME=MAIL_USERNAME,
+    MAIL_PASSWORD=MAIL_PASSWORD,
+    MAIL_DEFAULT_SENDER=MAIL_DEFAULT_SENDER,
+)
+
+mail = Mail(app)
 
 def get_connection():
+    if not DATABASE_URL:
+        print("HATA: DATABASE_URL ortam değişkeni bulunamadı. Bağlantı kurulamıyor.")
+        return None
     try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST
-        )
+        # psycopg2, tek bir URL dizesini kabul eder (bu, docker-compose.yml'den geliyor)
+        conn = psycopg2.connect(DATABASE_URL)
         return conn
     except psycopg2.DatabaseError as e:
         print(f"Veritabanına bağlanılamadı: {e}")
@@ -106,19 +134,7 @@ def get_movie_id_by_title_from_db(conn, cursor, title):
     return {"film_id": None, "baslik": None}
 
 
-app = Flask(__name__)
-CORS(app)
-app.secret_key = "senin-cok-gizli-anahtarın-buraya-gelsin"
-app.config.update(
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_PORT=587,
-    MAIL_USE_TLS=True,
-    MAIL_USERNAME="topcuzeynep445@gmail.com",
-    MAIL_PASSWORD="mfoa hdcj dpzm ctgb",  # Gmail için “Uygulama şifresi” kullan
-    MAIL_DEFAULT_SENDER=("Filma Destek", "gmail_adresin@gmail.com"),
-)
 
-mail = Mail(app)
 
 
 # HTML sayfaları
@@ -505,11 +521,16 @@ def latest_movies():
 
 @app.route("/api/now_playing")
 def now_playing():
+    # Burası doğrudan DB bağlantısı kurmak yerine,
+    # SADECE get_connection() fonksiyonunu çağırmalıdır:
+    conn = get_connection()
+    if not conn:
+        # Bağlantı başarısızsa hemen hata döndür
+        return jsonify({"error": "Veritabanı bağlantısı kurulamadı."}), 500
+
+    cursor = conn.cursor()
     try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST
-        )
-        cursor = conn.cursor()
+        # Veritabanı sorgusu
         cursor.execute(
             """
             SELECT film_id, baslik, afis_url, release_date
@@ -531,11 +552,13 @@ def now_playing():
                 for m in movies
             ]
         )
+    except psycopg2.Error as e:
+        print(f"Sorgu hatası: {e}")
+        return jsonify({"error": "Veritabanı sorgusu başarısız."}), 500
     finally:
+        # Her zaman kapat
         cursor.close()
         conn.close()
-
-
 @app.route("/api/genres")
 def get_genres():
     conn = get_connection()
@@ -708,28 +731,28 @@ def filter_movies():
     finally:
         cursor.close()
         conn.close()
-
-
-# ✅ YENİ VERSİYON - EXCLUDE PARAMETRELİ
+# ✅ YENİ VERSİYON - EXCLUDE PARAMETRELİ ve BEĞENİ SAYISINA GÖRE SIRALAMALI
 @app.route("/api/recommendations")
 def get_user_recommendations():
     exclude_param = request.args.get("exclude", "")
+    # Hariç tutulacak ID'leri (URL'den gelen ve kullanıcının izledikleri) toplar
     exclude_ids = [int(x) for x in exclude_param.split(",") if x.strip().isdigit()]
 
     if "email" not in session:
         return jsonify([]), 200
 
-    user_id = get_id_by_email(session["email"])
+    user_id = get_id_by_email(session["email"]) # Varsayılan kullanıcı ID'sini çeken fonksiyon
     if not user_id:
         return jsonify([]), 200
 
-    conn = get_connection()
+    conn = get_connection() # Varsayılan veritabanı bağlantı fonksiyonu
     if not conn:
         return jsonify({"hata": "Veritabanı bağlantı hatası"}), 500
 
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
+        # 1. Kullanıcının Beğendiği Filmleri Bulma
         cur.execute("SELECT film_id FROM favoriler WHERE kullanici_id = %s", (user_id,))
         watched = cur.fetchall()
         watched_ids = [w["film_id"] for w in watched]
@@ -737,6 +760,7 @@ def get_user_recommendations():
         if not watched_ids:
             return jsonify([]), 200
 
+        # 2. Benzer Kullanıcıları Tespit Etme (Aynı filmleri beğenen diğerleri)
         cur.execute(
             """
             SELECT DISTINCT kullanici_id
@@ -751,13 +775,22 @@ def get_user_recommendations():
         if not similar_ids:
             return jsonify([]), 200
 
+        # Hariç tutulacak tüm ID'ler (Kullanıcının izledikleri + URL'den gelenler)
         all_exclude_ids = list(set(watched_ids + exclude_ids))
 
+        # 3. Önerileri Toplama ve Beğeni Sayısına Göre Sıralama (BURASI DEĞİŞTİ)
         cur.execute(
             """
-            SELECT DISTINCT film_id
-            FROM favoriler
-            WHERE kullanici_id = ANY(%s) AND film_id != ALL(%s)
+            SELECT
+                film_id
+            FROM
+                favoriler
+            WHERE
+                kullanici_id = ANY(%s) AND film_id != ALL(%s)
+            GROUP BY
+                film_id
+            ORDER BY
+                COUNT(kullanici_id) DESC  -- En çok benzer kullanıcı tarafından beğenilene öncelik
             LIMIT 20
         """,
             (similar_ids, all_exclude_ids),
@@ -766,19 +799,22 @@ def get_user_recommendations():
         rec_ids = [r["film_id"] for r in recs]
 
         if not rec_ids:
+            # Benzer kullanıcı bulundu ama onlar da sadece kullanıcının gördüklerini beğenmiş olabilir.
             return jsonify([]), 200
 
+        # 4. Önerilen Filmlerin Detaylarını Çekme (IMDB puanına göre sıralama burada kalabilir, ancak teknik olarak artık önemini yitirdi)
         cur.execute(
             """
             SELECT film_id, baslik, afis_url, imdb_puani, release_date
             FROM filmler
             WHERE film_id = ANY(%s)
-            ORDER BY imdb_puani DESC
+            ORDER BY imdb_puani DESC -- Bu kısım isteğe bağlı, kaldırılabilir de.
         """,
             (rec_ids,),
         )
         movies = cur.fetchall()
 
+        # 5. Sonucu Hazırlama ve Gönderme
         result = []
         for movie in movies:
             result.append(
@@ -801,10 +837,10 @@ def get_user_recommendations():
         print(f"Recommendations API hatası: {e}")
         return jsonify([]), 200
     finally:
-        cur.close()
-        conn.close()
-
-
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 @app.route("/api/similar_movies/<int:movie_id>")
 def get_similar_movies_ml(movie_id):
     """🎯 ML tabanlı öneri sistemi - Film detay sayfası için"""

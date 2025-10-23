@@ -9,7 +9,7 @@ import numpy as np
 DB_NAME = "film_onerileri"
 DB_USER = "postgres"
 DB_PASSWORD = "1234"
-DB_HOST = "localhost"
+DB_HOST = "db"
 
 # --- 1. ADIM: VERİ ÇEKME FONKSİYONU ---
 
@@ -29,78 +29,97 @@ def fetch_data_from_db():
         df_filmler = pd.read_sql(query_main, conn)
 
         query_genres = "SELECT ft.film_id, t.ad FROM film_turleri ft JOIN turler t ON ft.tur_id = t.tur_id;"
+        # Sütun adı 'ad' olarak geliyor
         df_turler = pd.read_sql(query_genres, conn)
 
         query_cast = "SELECT fo.film_id, o.ad FROM film_oyunculari fo JOIN oyuncular o ON fo.oyuncu_id = o.oyuncu_id;"
-        df_oyuncular = pd.read_sql(query_cast, conn)
+        # Sütun adı 'ad' olarak geliyor
+        df_oyunculari = pd.read_sql(query_cast, conn)
 
         query_director = "SELECT fy.film_id, y.ad FROM film_yonetmenleri fy JOIN yonetmenler y ON fy.yonetmen_id = y.yonetmen_id;"
+        # Sütun adı 'ad' olarak geliyor
         df_yonetmenler = pd.read_sql(query_director, conn)
 
         conn.close()
-        return df_filmler, df_turler, df_oyuncular, df_yonetmenler
+        # İSİM DÜZELTME: df_oyuncular yerine df_oyunculari kullanılmış
+        return df_filmler, df_turler, df_oyunculari, df_yonetmenler
 
     except Exception as e:
-        print(f"Veritabanı bağlantı hatası: {e}")
+        # Uygulama loglarında bu hatanın görünmesi için print bırakıldı
+        print(f"Veritabanı bağlantı hatası: {e}") 
         return None, None, None, None
 
 
 def create_soup(x):
     """
     Filmin özelliklerini dengeli şekilde birleştirir.
-    İÇERİK ODAKLI: Özet ve yönetmen daha önemli.
+    Hata düzeltmesi: Artık birleştirilmiş (grup) sütun adlarını kullanıyoruz.
     """
-    cast_list = [name.replace(" ", "") for name in x["cast"].split() if name]
-    director_list = [name.replace(" ", "") for name in x["director"].split() if name]
+    # DÜZELTME: x["cast"] yerine x["cast_str"] kullanıldı
+    cast_list = [name.replace(" ", "") for name in x["cast_str"].split() if name]
+    # DÜZELTME: x["director"] yerine x["director_str"] kullanıldı
+    director_list = [name.replace(" ", "") for name in x["director_str"].split() if name]
 
     cast_str = " ".join(cast_list[:4])  # İlk 4 oyuncu yeterli
     director_str = " ".join(director_list)
 
     # İYİLEŞTİRİLMİŞ AĞIRLIKLANDIRMA:
-    # Özet: 3x (EN ÖNEMLİ - hikaye benzerliği)
-    # Yönetmen: 3x (aynı yönetmenin filmleri genelde benzer)
-    # Türler: 2x (önemli ama bastırmamalı)
-    # Oyuncular: 1x (en az etkili)
     weighted_summary = (x["ozet"] + " ") * 3
     weighted_director = (director_str + " ") * 3
-    weighted_genres = (x["genres"] + " ") * 2
+    # DÜZELTME: x["genres"] yerine x["genres_str"] kullanıldı
+    weighted_genres = (x["genres_str"] + " ") * 2
 
     return f"{weighted_summary} {weighted_director} {weighted_genres} {cast_str}"
 
 
 # --- 2. ADIM: VERİ HAZIRLIK ---
 
-df_filmler, df_turler, df_oyuncular, df_yonetmenler = fetch_data_from_db()
+# İSİM DÜZELTME: df_oyuncular yerine df_oyunculari kullanıldı
+df_filmler, df_turler, df_oyunculari, df_yonetmenler = fetch_data_from_db()
 
 if df_filmler is None:
+    # Eğer veritabanı bağlantısı kurulamadıysa, uygulamayı sonlandır
+    print("Veritabanı bağlantısı kurulamadığı için uygulama kapatılıyor.")
+    exit() 
+
+if df_filmler.empty:
+    print("Veritabanından çekilen film sayısı 0 olduğu için uygulama kapatılıyor.")
     exit()
 
 print(f"Veritabanından çekilen film sayısı: {len(df_filmler)}")
 
+
+# Hata düzeltmesi: .rename(columns) aşamasında yeni ve tutarlı sütun adları kullanıldı.
 df_turler_grup = (
     df_turler.groupby("film_id")["ad"]
     .apply(lambda x: " ".join(x))
     .reset_index()
-    .rename(columns={"ad": "genres"})
+    .rename(columns={"ad": "genres_str"}) # 'genres' yerine 'genres_str' kullanıldı
 )
 df_oyuncular_grup = (
-    df_oyuncular.groupby("film_id")["ad"]
+    df_oyunculari.groupby("film_id")["ad"] # df_oyuncular yerine df_oyunculari kullanıldı
     .apply(lambda x: " ".join(x))
     .reset_index()
-    .rename(columns={"ad": "cast"})
+    .rename(columns={"ad": "cast_str"}) # 'cast' yerine 'cast_str' kullanıldı
 )
 df_yonetmenler_grup = (
     df_yonetmenler.groupby("film_id")["ad"]
     .apply(lambda x: " ".join(x))
     .reset_index()
-    .rename(columns={"ad": "director"})
+    .rename(columns={"ad": "director_str"}) # 'director' yerine 'director_str' kullanıldı
 )
 
+# Yeni sütun adlarını kullanmak için df_oyuncular'daki isim hatası düzeltildi
 data_frames = [df_filmler, df_turler_grup, df_oyuncular_grup, df_yonetmenler_grup]
+
+# Hata düzeltmesi: Boş değerler (NaN) yerine boş string ('' ) atandı.
+# Bu, .apply(create_soup) içinde .split() metodunun hata vermesini engeller.
 df_final = reduce(
     lambda left, right: pd.merge(left, right, on="film_id", how="left"), data_frames
 )
-df_final = df_final.fillna("")
+df_final = df_final.fillna("") 
+
+# Bu satır artık doğru çalışmalı:
 df_final["soup"] = df_final.apply(create_soup, axis=1)
 
 print("✅ Özellik birleştirme tamamlandı.")
@@ -120,8 +139,6 @@ print(f"✅ Cosine Similarity Boyutu: {cosine_sim.shape}")
 
 df_final = df_final.reset_index()
 indices = pd.Series(df_final.index, index=df_final["baslik"])
-
-
 # --- 4. ADIM: İYİLEŞTİRİLMİŞ ÖNERİ FONKSİYONU ---
 def get_recommendations(
     title,
