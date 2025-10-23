@@ -28,10 +28,6 @@ def login_required(f):
 
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
-if not DATABASE_URL:
-    # Bu, flask shell'i doğrudan çalıştırdığınızda ortam değişkeni yüklenmediği için gereklidir.
-    # Kendi şifrenizi ve DB adınızı kontrol edin!
-    DATABASE_URL = "postgres://postgres:1234@db:5432/film_onerileri"
 TMDB_API_KEY = os.environ.get("TMDB_API_KEY")
 FLASK_SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
 
