@@ -1,4 +1,6 @@
 # Dockerfile
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # AŞAMA 1: Yapı Aşaması (Kütüphaneleri Kurmak ve Optimize Etmek)
 FROM python:3.11-alpine AS builder

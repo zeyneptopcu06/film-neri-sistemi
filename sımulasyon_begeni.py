@@ -6,6 +6,7 @@ import random
 import names 
 import string
 import datetime
+import os # <-- BU SATIRI EKLEYİN!
 
 
 # --- AYARLAR ---
