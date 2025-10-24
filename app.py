@@ -27,12 +27,7 @@ def login_required(f):
     return decorated_function
 
 
-# Veritabanı bağlantı bilgileri
-DB_HOST = os.environ.get("DB_HOST", "db")
-DB_NAME = os.environ.get("DB_NAME", "film_onerileri")
-DB_USER = os.environ.get("DB_USER", "postgres")
-DB_PASSWORD = os.environ.get("DB_PASSWORD", "1234")
-DB_PORT = os.environ.get("DB_PORT", "5432")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 TMDB_API_KEY = os.environ.get("TMDB_API_KEY")
 FLASK_SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
 
@@ -62,19 +57,15 @@ app.config.update(
 mail = Mail(app)
 
 def get_connection():
+    if not DATABASE_URL:
+        print("HATA: DATABASE_URL ortam değişkeni bulunamadı. Bağlantı kurulamıyor.")
+        return None
     try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
-        print(f"✅ Veritabanına bağlanıldı: {DB_HOST}/{DB_NAME}")
+        # psycopg2, tek bir URL dizesini kabul eder (bu, docker-compose.yml'den geliyor)
+        conn = psycopg2.connect(DATABASE_URL)
         return conn
     except psycopg2.DatabaseError as e:
-        print(f"❌ Veritabanı bağlantı hatası: {e}")
-        print(f"   Host: {DB_HOST}, DB: {DB_NAME}, User: {DB_USER}, Port: {DB_PORT}")
+        print(f"Veritabanına bağlanılamadı: {e}")
         return None
 
 
