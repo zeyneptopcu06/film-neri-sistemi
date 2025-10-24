@@ -7,13 +7,6 @@ import names
 import string
 import datetime
 
-# names kütüphanesini yüklemek için: pip install names
-
-# --- BAĞLANTI BİLGİLERİ (VERİ TOPLAMA SCRİPTİNİZDEKİ İLE AYNI OLMALI) ---
-DB_NAME = "film_onerileri"
-DB_USER = "postgres"
-DB_PASSWORD = "1234"
-DB_HOST = "db"
 
 # --- AYARLAR ---
 EKLEME_SAYISI = 10         # Her kullanıcı için eklenecek film sayısı
@@ -22,9 +15,25 @@ SIMULE_KULLANICI_SAYISI = 50 # Veritabanına kaç yeni simüle kullanıcı eklen
 def connect_db():
     """Veritabanı bağlantısını kurar ve autocommit modunu açar."""
     try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST
-        )
+        database_url = os.environ.get("DATABASE_URL")
+        
+        if database_url:
+            # 1. Yöntem: Tek DATABASE_URL kullan
+            conn = psycopg2.connect(database_url)
+            print("Veritabanına başarıyla bağlandı (DATABASE_URL kullanıldı).")
+        else:
+            # 2. Yöntem: Ayrı ayrı değişkenleri kullan (fallback)
+            # Eğer ortam değişkenleri ayarlanmamışsa varsayılan değerleri kullanır
+            DB_HOST = os.environ.get("DB_HOST", "db") 
+            DB_NAME = os.environ.get("DB_NAME", "film_onerileri")
+            DB_USER = os.environ.get("DB_USER", "postgres")
+            DB_PASSWORD = os.environ.get("DB_PASSWORD", "1234")
+            
+            conn = psycopg2.connect(
+                dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST
+            )
+            print(f"Veritabanına başarıyla bağlandı (Ayrı değişkenler kullanıldı: Host={DB_HOST}).")
+
         conn.autocommit = True
         cursor = conn.cursor()
         print("Veritabanına başarıyla bağlandı.")

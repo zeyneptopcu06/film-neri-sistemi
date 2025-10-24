@@ -6,11 +6,6 @@ import random
 import os # <-- BU SATIRI EKLEYİN!
 # --- BAĞLANTI BİLGİLERİ (LÜTFEN KONTROL EDİN) ---
 TMDB_API_KEY = "e56d77228a887a715c264cbc5000b8c9"  # Kendi anahtarınızı girin
-DB_HOST = os.environ.get("DB_HOST", "db") 
-DB_NAME = os.environ.get("DB_NAME", "film_onerileri")
-DB_USER = os.environ.get("DB_USER", "postgres")
-DB_PASSWORD = os.environ.get("DB_PASSWORD", "1234")
-# --- API AYARLARI ---
 API_TIMEOUT = 30
 API_DELAY = 0.3
 MAX_PAGES_EN = 40  # İngilizce filmler için max sayfa
@@ -184,10 +179,23 @@ def fetch_movie_trailer(movie_id, api_key):
 
 def main():
     try:
-        # ⭐ HATA ÇÖZÜMÜ: autocommit=True ile işlem güvenliği sağlanıyor ⭐
-        conn = psycopg2.connect(
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST
-        )
+        database_url = os.environ.get("DATABASE_URL")
+        
+        if database_url:
+            # 1. Yöntem: Tek DATABASE_URL kullan
+            print("Veritabanı bağlantısı DATABASE_URL ortam değişkeni kullanılarak yapılıyor.")
+            conn = psycopg2.connect(database_url)
+        else:
+            # 2. Yöntem: Ayrı ayrı değişkenleri kullan (eski mantık/fallback)
+            DB_HOST = os.environ.get("DB_HOST", "db") 
+            DB_NAME = os.environ.get("DB_NAME", "film_onerileri")
+            DB_USER = os.environ.get("DB_USER", "postgres")
+            DB_PASSWORD = os.environ.get("DB_PASSWORD", "1234")
+            
+            print(f"Veritabanı bağlantısı ayrı değişkenlerle yapılıyor (Host: {DB_HOST}).")
+            conn = psycopg2.connect(
+                dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST
+            )
         conn.autocommit = True
         cursor = conn.cursor()
         print("Veritabanına bağlanıldı. (Autocommit modu aktif: Hata önleme)")

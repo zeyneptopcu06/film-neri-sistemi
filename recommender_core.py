@@ -4,23 +4,37 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from functools import reduce
 import numpy as np
+import os # Ortam değişkenlerini okumak için eklendi
 
-# --- BAĞLANTI BİLGİLERİ ---
-DB_NAME = "film_onerileri"
-DB_USER = "postgres"
-DB_PASSWORD = "1234"
-DB_HOST = "db"
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+
 
 # --- 1. ADIM: VERİ ÇEKME FONKSİYONU ---
+def get_db_connection():
+    """DATABASE_URL kullanarak veritabanı bağlantısı kurar."""
+    if not DATABASE_URL:
+        print("HATA: DATABASE_URL ortam değişkeni bulunamadı. Bağlantı kurulamıyor.")
+        return None
+    try:
+        # psycopg2, tek bir bağlantı dizesini (DATABASE_URL) kabul eder.
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    except psycopg2.DatabaseError as e:
+        print(f"Veritabanı bağlantı hatası: {e}")
+        return None
 
 
 def fetch_data_from_db():
     """Veritabanından filmleri ve ilişkili tüm verileri çeker."""
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST
-        )
+    
+    # KRİTİK DÜZELTME: Yeni bağlantı fonksiyonunu kullan
+    conn = get_db_connection()
+    
+    if conn is None:
+        return None, None, None, None # Bağlantı kurulamadı
 
+    try:
         query_main = """
         SELECT film_id, tmdb_id, baslik, ozet, imdb_puani
         FROM filmler
@@ -29,25 +43,23 @@ def fetch_data_from_db():
         df_filmler = pd.read_sql(query_main, conn)
 
         query_genres = "SELECT ft.film_id, t.ad FROM film_turleri ft JOIN turler t ON ft.tur_id = t.tur_id;"
-        # Sütun adı 'ad' olarak geliyor
         df_turler = pd.read_sql(query_genres, conn)
 
         query_cast = "SELECT fo.film_id, o.ad FROM film_oyunculari fo JOIN oyuncular o ON fo.oyuncu_id = o.oyuncu_id;"
-        # Sütun adı 'ad' olarak geliyor
         df_oyunculari = pd.read_sql(query_cast, conn)
 
         query_director = "SELECT fy.film_id, y.ad FROM film_yonetmenleri fy JOIN yonetmenler y ON fy.yonetmen_id = y.yonetmen_id;"
-        # Sütun adı 'ad' olarak geliyor
         df_yonetmenler = pd.read_sql(query_director, conn)
 
         conn.close()
-        # İSİM DÜZELTME: df_oyuncular yerine df_oyunculari kullanılmış
         return df_filmler, df_turler, df_oyunculari, df_yonetmenler
 
     except Exception as e:
         # Uygulama loglarında bu hatanın görünmesi için print bırakıldı
-        print(f"Veritabanı bağlantı hatası: {e}") 
+        print(f"Veritabanı bağlantı/sorgu hatası: {e}") 
+        if conn: conn.close()
         return None, None, None, None
+
 
 
 def create_soup(x):
