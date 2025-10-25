@@ -35,7 +35,8 @@ services:
       - db  # DB ayağa kalkmadan başlamaz
     environment:
       # Flask uygulaması, bu bağlantı dizesini kullanarak veritabanına erişir
-      DATABASE_URL: postgres://postgres:1234@db:5432/film_onerileri 
+      DATABASE_URL: ${DATABASE_URL}
+      #postgres://postgres:1234@db:5432/film_onerileri 
       TMDB_API_KEY: ${TMDB_API_KEY} 
       FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}
       
