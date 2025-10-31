@@ -10,6 +10,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
       POSTGRES_DB: film_onerileri
+
     
     volumes:
       # [YENİ EKLEME] Burası kritik: db_yedek.sql dosyasının bulunduğu klasörü bağlıyoruz.
@@ -24,6 +25,8 @@ services:
 
   # 2. Flask Uygulaması (Web Servisi)
   web:
+    volumes:
+      - .:/app
     build: .  # Aynı dizindeki Dockerfile'ı kullan
     container_name: film_onerisi_app
     # GÜNCELLENDİ: Gunicorn zaman aşımı 300 saniyeye (5 dakika) çıkarıldı
@@ -35,7 +38,7 @@ services:
       - db  # DB ayağa kalkmadan başlamaz
     environment:
       # Flask uygulaması, bu bağlantı dizesini kullanarak veritabanına erişir
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgres://postgres:1234@db:5432/film_onerileri
       #postgres://postgres:1234@db:5432/film_onerileri 
       TMDB_API_KEY: ${TMDB_API_KEY} 
       FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}

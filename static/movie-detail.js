@@ -1,5 +1,5 @@
 // ============================================
-// DETAY SAYFASI - DÜZELTILMIŞ YORUM SISTEMI (BEĞENI ENTEGRESI)
+// DETAY SAYFASI - DÜZELTILMIŞ YORUM VE BEĞENİ SISTEMI
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (movie && movie.baslik) {
                 renderMovieDetails(movie, isFavorite);
                 await loadComments(currentMovieId);
-                await loadSimilarMovies(currentMovieId); // ✅ Yorumlardan SONRA benzer filmleri yükle
+                await loadSimilarMovies(currentMovieId);
                 setupTrailerModal();
             } else {
                 detailContent.innerHTML = `
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ✅ DÜZELTILMIŞ: Film detaylarını render et - Benzer filmler EN ALTTA
+    // Film detaylarını render et
     function renderMovieDetails(movie, isFavorite) {
         const castHtml = Array.isArray(movie.cast) && movie.cast.length > 0
             ? movie.cast.map(actor =>
@@ -127,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        // ✅ SIRA DEĞİŞTİRİLDİ: Yorumlar önce, benzer filmler sonra
         const detailHtml = `
             <div class="movie-detail">
                 <div class="detail-header">
@@ -180,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
 
-                <!-- ✅ YORUMLAR BÖLÜMÜ (ÜST SIRADA) -->
+                <!-- YORUMLAR BÖLÜMÜ -->
                 <div class="comments-section">
                     <h2><i class="fas fa-comments"></i> Yorumlar</h2>
                     
@@ -202,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
 
-                <!-- ✅ BENZERİ FİLMLER BÖLÜMÜ (ALT SIRADA) -->
+                <!-- BENZERİ FİLMLER BÖLÜMÜ -->
                 <div id="similar-movies-section" class="similar-movies-section">
                     <h2><i class="fas fa-film"></i> Benzer Filmler</h2>
                     <div id="similar-movies-container" class="loading-state">
@@ -225,8 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAllLikeButtons();
     }
 
-
-    // ✅ YORUMLARI YÜKLEME FONKSİYONU
+    // Yorumları yükleme
     async function loadComments(movieId) {
         const yorumListesi = document.getElementById('yorum-listesi');
         if (!yorumListesi) return;
@@ -295,8 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             }).join('');
-            
-            setupCommentEventListeners(); 
 
         } catch (error) {
             console.error('Yorumlar yüklenirken hata:', error);
@@ -304,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // ✅ YORUM BEĞENİ TOGGLE FONKSİYONU
+    // Yorum beğeni toggle
     async function begeniToggle(button) {
         const yorumId = button.dataset.yorumId;
         let isLiked = button.dataset.liked === 'true';
@@ -353,9 +349,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-    // ✅ OLAY DİNLEYİCİLERİ
-    document.addEventListener('click', async (e) => {
+    // ✅ OLAY DİNLEYİCİLERİ (EVENT DELEGATION)
+    // DETAİL SAYFASI İÇİN ÖZEL EVENT LISTENER (TÜM DETAIL-CONTENT)
+    document.body.addEventListener('click', async (e) => {
+        
+        // ✅ FİLM BEĞENİ İŞLEMİ - EN ÖNCELİKLİ (Benzer filmler dahil)
+        const likeButton = e.target.closest('.like-button');
+        if (likeButton && detailContent.contains(likeButton)) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const movieId = likeButton.dataset.movieId;
+            const movieTitle = likeButton.dataset.movieTitle;
+            
+            console.log('🎬 Detay sayfası - Film beğeni:', {movieId, movieTitle});
+            
+            // main.js'teki toggleFavorite fonksiyonunu kullan
+            if (typeof toggleFavorite === 'function') {
+                await toggleFavorite(movieTitle, likeButton);
+            } 
+            // Ya da lokal fonksiyonu kullan
+            else {
+                console.log('⚠️ Global toggleFavorite yok, lokal fonksiyon kullanılıyor');
+                await handleMovieLike(movieId, movieTitle);
+            }
+            return; // Diğer işlemlere geçme
+        }
+        
+        // Aşağıdaki işlemler sadece detailContent içindeyse çalışsın
+        if (!detailContent.contains(e.target)) return;
         
         // Yorum ekleme
         if (e.target.id === 'yorum-ekle-btn' || e.target.closest('#yorum-ekle-btn')) {
@@ -445,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Yorum beğeni işlemi
-        else if (e.target.closest('.begeni-butonu')) {
+        else if (e.target.closest('.begeni-butonu:not(.disabled-begeni)')) {
             const button = e.target.closest('.begeni-butonu');
             if (currentUserId) {
                 begeniToggle(button);
@@ -453,9 +475,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Bu yorumu beğenmek için giriş yapmalısınız!');
             }
         }
-    });
+    }); // document.body listener sonu
 
-    // ✅ Benzer filmleri yükle
+    // Benzer filmleri yükle
     async function loadSimilarMovies(movieId) {
         const container = document.getElementById('similar-movies-container');
         
@@ -490,36 +512,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Benzer filmleri render et
-    function renderSimilarMovies(movies) {
-        const container = document.getElementById('similar-movies-container');
-        
-        const moviesHtml = movies.map(movie => {
-            const isFavorite = userFavorites.includes(movie.id);
-            
-            return `
-                <div class="movie-card" onclick="window.location.href='/movie-detail?id=${movie.id}'">
-                    <button class="like-button ${isFavorite ? 'liked' : ''}" 
-                        data-movie-id="${movie.id}"
-                        data-movie-title="${movie.baslik}"
-                        onclick="event.stopPropagation()">
-                        <i class="fas fa-heart"></i>
-                    </button>
-                    <img src="${movie.afis_url || '/static/placeholder.jpg'}" 
-                        alt="${movie.baslik}" 
-                        onerror="this.src='/static/placeholder.jpg'">
-                    <h3>${movie.baslik}</h3>
-                </div>
-            `;
-        }).join('');
-        
-        container.innerHTML = `<div class="similar-movies-grid">${moviesHtml}</div>`;
-        updateAllLikeButtons();
-    }
-    
-    function setupCommentEventListeners() {
-        // Event delegation ile yönetiliyor
-    }
+    // Benzer filmleri render et (standart kart tasarımıyla)
+function renderSimilarMovies(movies) {
+    const container = document.getElementById('similar-movies-container');
+    if (!container) return;
+
+    const grid = document.createElement('div');
+    grid.className = 'similar-movies-grid';
+
+    movies.forEach(movie => {
+        const isFavorite = userFavorites.includes(Number(movie.id));
+        const card = createMovieCard({
+            id: movie.id,
+            baslik: movie.baslik,
+            afis_url: movie.afis_url
+        }, isFavorite);
+
+        grid.appendChild(card);
+    });
+
+    container.innerHTML = '';
+    container.appendChild(grid);
+
+    updateAllLikeButtons();
+}
+
 
     // Fragman modal fonksiyonları
     function setupTrailerModal() {
@@ -571,6 +588,118 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeModal();
             }
         }
+    }
+
+    // ✅ FİLM BEĞENİ FONKSİYONU (main.js ile uyumlu)
+    async function handleMovieLike(movieId, movieTitle, button) {
+        if (!currentUserId) {
+            alert('Beğenmek için giriş yapmalısınız!');
+            return;
+        }
+
+        try {
+            const isLiked = button.classList.contains('liked');
+            
+            if (isLiked) {
+                // Favoriden çıkar
+                const response = await fetch('/api/remove_from_favorites', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ film_id: movieId })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.mesaj) {
+                    console.log('✅ Favoriden çıkarıldı:', movieTitle);
+                    
+                    // userFavorites listesini güncelle
+                    if (typeof userFavorites !== 'undefined') {
+                        userFavorites = userFavorites.filter(id => id !== Number(movieId));
+                        if (typeof saveFavoritesToStorage === 'function') {
+                            saveFavoritesToStorage();
+                        }
+                    }
+                    
+                    button.classList.remove('liked');
+                    updateLikeButtonsLocal();
+                    showNotification(`❌ ${movieTitle} favorilerden çıkarıldı`);
+                } else {
+                    alert(data.hata || 'Favori kaldırma işlemi başarısız.');
+                }
+                
+            } else {
+                // Favoriye ekle
+                const response = await fetch('/api/add_to_favorites', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ film_id: movieId })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.mesaj) {
+                    console.log('✅ Favoriye eklendi:', movieTitle);
+                    
+                    // userFavorites listesini güncelle
+                    if (typeof userFavorites !== 'undefined') {
+                        if (!userFavorites.includes(Number(movieId))) {
+                            userFavorites.push(Number(movieId));
+                        }
+                        if (typeof saveFavoritesToStorage === 'function') {
+                            saveFavoritesToStorage();
+                        }
+                    }
+                    
+                    button.classList.add('liked');
+                    updateLikeButtonsLocal();
+                    showNotification(`✅ ${movieTitle} favorilere eklendi`);
+                } else {
+                    alert(data.hata || 'Favori ekleme işlemi başarısız.');
+                }
+            }
+            
+        } catch (error) {
+            console.error('Beğeni hatası:', error);
+            alert('Bir hata oluştu');
+        }
+    }
+
+    // Lokal buton güncelleme
+    function updateLikeButtonsLocal() {
+        if (typeof userFavorites === 'undefined') return;
+        
+        document.querySelectorAll('.like-button').forEach(button => {
+            const movieId = parseInt(button.dataset.movieId);
+            if (userFavorites.includes(movieId)) {
+                button.classList.add('liked');
+            } else {
+                button.classList.remove('liked');
+            }
+        });
+    }
+
+    // Basit bildirim
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 2000);
     }
 
     // Sayfa başlatma

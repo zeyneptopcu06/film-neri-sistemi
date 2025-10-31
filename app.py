@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import Flask, jsonify, request, render_template, session
 from flask_cors import CORS
 import psycopg2
@@ -16,6 +18,8 @@ import os
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 
+import traceback
+
 
 def login_required(f):
     @wraps(f)
@@ -27,7 +31,7 @@ def login_required(f):
     return decorated_function
 
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get('DATABASE_URL')
 TMDB_API_KEY = os.environ.get("TMDB_API_KEY")
 FLASK_SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
 
@@ -62,7 +66,7 @@ def get_connection():
         return None
     try:
         # psycopg2, tek bir URL dizesini kabul eder (bu, docker-compose.yml'den geliyor)
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(DATABASE_URL,client_encoding='utf8')
         return conn
     except psycopg2.DatabaseError as e:
         print(f"Veritabanına bağlanılamadı: {e}")
@@ -837,64 +841,60 @@ def get_user_recommendations():
             cur.close()
         if conn:
             conn.close()
+import traceback
+from flask import Flask, jsonify
+import pandas as pd
+
+import traceback
+
 @app.route("/api/similar_movies/<int:movie_id>")
 def get_similar_movies_ml(movie_id):
-    """🎯 ML tabanlı öneri sistemi - Film detay sayfası için"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Film bilgilerini al
-        cursor.execute(
-            "SELECT baslik, tmdb_id FROM filmler WHERE film_id = %s", (movie_id,)
-        )
+        cursor.execute("SELECT baslik, tmdb_id FROM filmler WHERE film_id = %s", (movie_id,))
         result = cursor.fetchone()
         if not result:
             conn.close()
+            print(f"⚠️ Film bulunamadı: movie_id={movie_id}")
             return jsonify({"error": "Film bulunamadı"}), 404
 
         film_adi, current_tmdb_id = result
         print(f"🔍 '{film_adi}' için ML önerileri hesaplanıyor...")
 
-        # Önceki önerileri exclude etmek için set oluştur
-        exclude_ids = {int(current_tmdb_id)}
-
-        # Önerileri al
-        oneriler_df = get_recommendations(
-            film_adi, exclude_tmdb_ids=exclude_ids, top_n=15
-        )
-        oneriler_df = oneriler_df.drop_duplicates(subset=["tmdb_id"])
-
+        oneriler_df = get_recommendations(film_adi, exclude_tmdb_ids={int(current_tmdb_id)}, top_n=15)
+        
+        # Eğer boş DataFrame dönerse
         if oneriler_df.empty:
             conn.close()
-            print("⚠️ Öneri sistemi bu film için öneri üretemedi.")
+            print(f"⚠️ '{film_adi}' için öneri bulunamadı.")
             return jsonify([])
+        
+        oneriler_df = oneriler_df.drop_duplicates(subset=["tmdb_id"])
 
         similar_movies = []
         for _, row in oneriler_df.iterrows():
-            tmdb_id = row.get("tmdb_id")
-            if not tmdb_id or pd.isna(tmdb_id) or int(tmdb_id) == int(current_tmdb_id):
-                continue
+            try:
+                tmdb_id = row.get("tmdb_id")
+                if not tmdb_id or pd.isna(tmdb_id) or int(tmdb_id) == int(current_tmdb_id):
+                    continue
 
-            cursor.execute(
-                """
-                SELECT film_id, baslik, afis_url, imdb_puani 
-                FROM filmler 
-                WHERE tmdb_id = %s
-            """,
-                (int(tmdb_id),),
-            )
-            movie_data = cursor.fetchone()
-
-            if movie_data:
-                similar_movies.append(
-                    {
+                cursor.execute(
+                    "SELECT film_id, baslik, afis_url, imdb_puani FROM filmler WHERE tmdb_id = %s",
+                    (int(tmdb_id),),
+                )
+                movie_data = cursor.fetchone()
+                if movie_data:
+                    similar_movies.append({
                         "id": movie_data[0],
                         "baslik": movie_data[1],
                         "afis_url": movie_data[2],
                         "imdb_puani": movie_data[3],
-                    }
-                )
+                    })
+            except Exception as inner_e:
+                print(f"⚠️ Öneri satırı işlenemedi: {inner_e}")
+                traceback.print_exc()
 
         conn.close()
         print(f"✅ {len(similar_movies)} geçerli öneri bulundu.")
@@ -902,9 +902,9 @@ def get_similar_movies_ml(movie_id):
 
     except Exception as e:
         print(f"❌ ML öneri hatası: {e}")
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
+    
 # ✅ YENİ VERSİYON - EXCLUDE PARAMETRELİ
 @app.route("/api/recommendations_by_genre")
 def get_recommendations_by_genre():
