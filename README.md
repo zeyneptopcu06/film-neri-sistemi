@@ -1,4 +1,4 @@
-# 🎬 Film Öneri Sistemi: Tam Yığın (Full-Stack) Uygulama
+# 🎬 Film Öneri Sistemi
 
 
 ## ✨ Proje Hakkında
