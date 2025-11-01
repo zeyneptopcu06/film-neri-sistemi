@@ -17,3 +17,5 @@ requests==2.32.3
 gunicorn==22.0.0
 setuptools
 wheel
+httpx         # Bu satır yeni eklendi
+asyncio

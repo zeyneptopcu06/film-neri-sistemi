@@ -1,50 +1,55 @@
 import requests
 import psycopg2
 from psycopg2 import sql
-import time
-import random
+from psycopg2.extras import execute_batch
 import os
-import sys  # <-- Hata çıktısını almak için KRİTİK EKLENTİ
-from datetime import date  # Tarih nesneleriyle çalışmak için ekledik (Veri tipi hatasını önlemek için)
+import sys
+from datetime import date
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 # --- SABİT AYARLAR ---
 TMDB_API_KEY = "e56d77228a887a715c264cbc5000b8c9"
-API_TIMEOUT = 30
-API_DELAY = 0.3
-MAX_PAGES_EN = 40
-MAX_PAGES_TR = 60
+API_TIMEOUT = 20  # ✅ 30 → 20 (daha hızlı timeout)
+MAX_PAGES_EN = 250
+MAX_PAGES_TR = 400
+MAX_PAGES_NOW_PLAYING = 100
+MAX_WORKERS = 20    # ✅✅ 10 → 20 (2x daha fazla paralel işlem)
+BATCH_SIZE = 200    # ✅ 100 → 200 (daha büyük batch'ler)
 
-
-# --- HIZ OPTİMİZASYONU: FİLMİN TAM İŞLENİP İŞLENMEDİĞİNİ KONTROL EDER ---
-def check_if_fully_fetched(cursor, tmdb_id):
-    """Filmin veritabanında var olup olmadığını ve tam işlenip işlenmediğini kontrol eder."""
+# --- HIZ OPTİMİZASYONU: TOPLU KONTROL ---
+def check_existing_movies(cursor, tmdb_ids):
+    """Birden fazla filmi tek sorguda kontrol eder."""
+    if not tmdb_ids:
+        return set()
     try:
         cursor.execute(
-            """
-            SELECT film_id, fragman_url 
-            FROM filmler 
-            WHERE tmdb_id = %s;
-            """,
-            (tmdb_id,),
+            "SELECT tmdb_id FROM filmler WHERE tmdb_id = ANY(%s) AND fragman_url IS NOT NULL",
+            (list(tmdb_ids),)
         )
-        result = cursor.fetchone()
-        if result and result[1] is not None:
-            return True, result[0]
-        return False, result[0] if result else None
+        return {row[0] for row in cursor.fetchall()}
     except Exception as e:
-        print(f"❌ DB Kontrol hatası (tmdb_id: {tmdb_id}): {e}", file=sys.stderr)
-        return False, None
+        print(f"❌ Toplu kontrol hatası: {e}", file=sys.stderr)
+        return set()
 
+# --- YARDIMCI VERİ EKLEME (CACHE İLE) ---
+_cache = {"turler": {}, "oyuncular": {}, "yonetmenler": {}}
 
-# --- YARDIMCI VERİ EKLEME FONKSİYONU ---
-def insert_data(conn, cursor, data, table_name, column_name):
+def insert_data_cached(cursor, data, table_name, column_name):
+    """Cache kullanarak gereksiz DB sorgularını önler."""
     if not data:
         return None
+    
+    # Cache'de var mı kontrol et
+    if data in _cache[table_name]:
+        return _cache[table_name][data]
+    
     pk_name = (
-        "tur_id"
-        if table_name == "turler"
-        else "oyuncu_id" if table_name == "oyuncular" else "yonetmen_id"
+        "tur_id" if table_name == "turler"
+        else "oyuncu_id" if table_name == "oyuncular"
+        else "yonetmen_id"
     )
+    
     try:
         cursor.execute(
             sql.SQL("SELECT {} FROM {} WHERE {} = %s").format(
@@ -56,7 +61,9 @@ def insert_data(conn, cursor, data, table_name, column_name):
         )
         record = cursor.fetchone()
         if record:
+            _cache[table_name][data] = record[0]
             return record[0]
+        
         cursor.execute(
             sql.SQL("INSERT INTO {} ({}) VALUES (%s) RETURNING {}").format(
                 sql.Identifier(table_name),
@@ -65,25 +72,25 @@ def insert_data(conn, cursor, data, table_name, column_name):
             ),
             (data,),
         )
-        return cursor.fetchone()[0]
-    except Exception as e:
-        print(f"❌ DB Veri Ekleme Hatası (Tablo: {table_name}, Veri: {data}): {e}", file=sys.stderr)
+        pk_id = cursor.fetchone()[0]
+        _cache[table_name][data] = pk_id
+        return pk_id
+    except Exception:
         return None
 
-
-# --- API'DEN FİLM LİSTESİ ÇEKME FONKSİYONLARI ---
+# --- API'DEN FİLM LİSTESİ ÇEKME (GECİKME YOK) ---
 def fetch_movies(api_key, endpoint, max_pages_to_fetch):
+    """Film listesini çeker (gecikme kaldırıldı)."""
     all_movies = []
     try:
         first_url = f"https://api.themoviedb.org/3/movie/{endpoint}?api_key={api_key}&language=tr-TR&page=1"
         response = requests.get(first_url, timeout=API_TIMEOUT)
         response.raise_for_status()
         first_page_data = response.json()
-        total_pages = first_page_data.get("total_pages", 1)
-        pages_to_fetch = min(total_pages, max_pages_to_fetch)
+        total_pages = min(first_page_data.get("total_pages", 1), max_pages_to_fetch)
         all_movies.extend(first_page_data.get("results", []))
 
-        for page_number in range(2, pages_to_fetch + 1):
+        for page_number in range(2, total_pages + 1):
             url = f"https://api.themoviedb.org/3/movie/{endpoint}?api_key={api_key}&language=tr-TR&page={page_number}"
             response = requests.get(url, timeout=API_TIMEOUT)
             response.raise_for_status()
@@ -91,35 +98,18 @@ def fetch_movies(api_key, endpoint, max_pages_to_fetch):
             if not movies:
                 break
             all_movies.extend(movies)
-            print(
-                f"✅ {endpoint} filmler: Sayfa {page_number}/{pages_to_fetch} - Film Sayısı: {len(movies)} (Toplam: {len(all_movies)})"
-            )
-            time.sleep(API_DELAY)
-
-    except requests.exceptions.RequestException as req_e:
-        print(f"❌ API Çekme Hatası ({endpoint}): {req_e}", file=sys.stderr)
+            if page_number % 10 == 0:
+                print(f"✅ {endpoint}: Sayfa {page_number}/{total_pages} (Toplam: {len(all_movies)})")
     except Exception as e:
-        print(f"❌ {endpoint} filmler çekme genel hatası: {e}", file=sys.stderr)
+        print(f"❌ {endpoint} hatası: {e}", file=sys.stderr)
     return all_movies
 
-
 def fetch_discover_movies(api_key, language_code, max_pages_to_fetch, sort_by):
+    """Discover API'den film çeker."""
     all_movies = []
     try:
-        print(
-            f"--- DISCOVER ({language_code.upper()} DİLİ) --- Sıralama: {sort_by} | Maksimum Sayfa: {max_pages_to_fetch}"
-        )
-        first_url = f"https://api.themoviedb.org/3/discover/movie?api_key={api_key}&language=tr-TR&sort_by={sort_by}&with_original_language={language_code}&page=1"
-        response = requests.get(first_url, timeout=API_TIMEOUT)
-        response.raise_for_status()
-        first_page_data = response.json()
-        total_pages = first_page_data.get("total_pages", 1)
-        pages_to_fetch = min(total_pages, max_pages_to_fetch)
-        all_movies.extend(first_page_data.get("results", []))
-
-        time.sleep(API_DELAY)
-
-        for page_number in range(2, pages_to_fetch + 1):
+        print(f"--- DISCOVER ({language_code.upper()}) - {sort_by} ---")
+        for page_number in range(1, max_pages_to_fetch + 1):
             url = f"https://api.themoviedb.org/3/discover/movie?api_key={api_key}&language=tr-TR&sort_by={sort_by}&with_original_language={language_code}&page={page_number}"
             response = requests.get(url, timeout=API_TIMEOUT)
             response.raise_for_status()
@@ -127,57 +117,38 @@ def fetch_discover_movies(api_key, language_code, max_pages_to_fetch, sort_by):
             if not movies:
                 break
             all_movies.extend(movies)
-            print(
-                f"✅ DISCOVER ({language_code.upper()} DİLİ): Sayfa {page_number}/{pages_to_fetch} - Film Sayısı: {len(movies)} (Toplam: {len(all_movies)})"
-            )
-            time.sleep(API_DELAY)
-
-    except requests.exceptions.RequestException as req_e:
-        print(f"❌ API Çekme Hatası (DISCOVER {language_code.upper()} DİLİ - {sort_by}): {req_e}", file=sys.stderr)
+            if page_number % 20 == 0:
+                print(f"✅ DISCOVER ({language_code.upper()}): Sayfa {page_number} (Toplam: {len(all_movies)})")
     except Exception as e:
-        print(f"❌ DISCOVER ({language_code.upper()} DİLİ) çekme genel hatası ({sort_by}): {e}", file=sys.stderr)
+        print(f"❌ DISCOVER ({language_code.upper()}) hatası: {e}", file=sys.stderr)
     return all_movies
 
-
-def fetch_movie_details_combined(movie_id, api_key):
+# --- PARALEL FİLM DETAY ÇEKME ---
+def fetch_single_movie_data(movie_id, api_key):
+    """Tek bir filmin tüm detaylarını çeker (paralel çalışacak)."""
     try:
-        url_combined = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&language=tr-TR&append_to_response=credits"
-        response = requests.get(url_combined, timeout=API_TIMEOUT)
+        # ✅ Tek istekte hem detay hem credits hem videos (3 istek → 1 istek)
+        url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&language=tr-TR&append_to_response=credits,videos"
+        response = requests.get(url, timeout=API_TIMEOUT)
         response.raise_for_status()
-        combined_data = response.json()
-        return combined_data, combined_data.get("credits", {})
-    except requests.exceptions.RequestException as req_e:
-        print(f"❌ Film Detayları API Hatası (ID: {movie_id}): {req_e}", file=sys.stderr)
-        return None, None
-    except Exception as e:
-        print(f"❌ Film Detayları Genel Hatası (ID: {movie_id}): {e}", file=sys.stderr)
-        return None, None
-
-
-def fetch_movie_trailer(movie_id, api_key):
-    try:
-        url_videos = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={api_key}"
-        response = requests.get(url_videos, timeout=API_TIMEOUT)
-        response.raise_for_status()
-        videos = response.json().get("results", [])
-        selected_video = next(
-            (
-                v
-                for v in videos
-                if v.get("type") == "Trailer" and v.get("site") == "YouTube"
-            ),
-            None,
+        data = response.json()
+        
+        # Fragman URL
+        videos = data.get("videos", {}).get("results", [])
+        trailer_url = next(
+            (f"https://www.youtube.com/embed/{v['key']}" 
+             for v in videos if v.get("type") == "Trailer" and v.get("site") == "YouTube"),
+            None
         )
-        return (
-            f"https://www.youtube.com/embed/{selected_video['key']}"
-            if selected_video
-            else None
-        )
-    except requests.exceptions.RequestException:
-        return None
+        
+        return {
+            "movie_id": movie_id,
+            "details": data,
+            "credits": data.get("credits", {}),
+            "trailer_url": trailer_url
+        }
     except Exception:
         return None
-
 
 # --- ANA FONKSİYON ---
 def main():
@@ -186,170 +157,187 @@ def main():
     try:
         # --- VERİTABANI BAĞLANTISI ---
         database_url = os.environ.get("DATABASE_URL")
-
         if database_url:
-            print("Veritabanı bağlantısı DATABASE_URL ortam değişkeni kullanılarak yapılıyor.")
             conn = psycopg2.connect(database_url)
         else:
             DB_HOST = os.environ.get("DB_HOST", "db")
             DB_NAME = os.environ.get("DB_NAME", "film_onerileri")
             DB_USER = os.environ.get("DB_USER", "postgres")
             DB_PASSWORD = os.environ.get("DB_PASSWORD", "1234")
-
-            print(f"Veritabanı bağlantısı ayrı değişkenlerle yapılıyor (Host: {DB_HOST}).")
             conn = psycopg2.connect(
                 dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, client_encoding='utf8'
             )
 
-        conn.autocommit = True
+        conn.autocommit = False  # ✅ Transaction kullanacağız
         cursor = conn.cursor()
-        print("✅ Veritabanına bağlanıldı. (Autocommit modu aktif)")
+        print("✅ Veritabanına bağlanıldı.")
 
         # --- FİLM LİSTELERİNİ ÇEKME ---
+        print("\n📥 Film listeleri çekiliyor...")
         movie_lists = [
+            # ✅ TÜRKÇE FİLMLER (400 sayfa × 4 kategori = ~8000 film)
             ("tr_top_rated", fetch_discover_movies(TMDB_API_KEY, "tr", MAX_PAGES_TR, "vote_average.desc")),
             ("tr_popular", fetch_discover_movies(TMDB_API_KEY, "tr", MAX_PAGES_TR, "popularity.desc")),
             ("tr_vote_count", fetch_discover_movies(TMDB_API_KEY, "tr", MAX_PAGES_TR, "vote_count.desc")),
             ("tr_new_releases", fetch_discover_movies(TMDB_API_KEY, "tr", MAX_PAGES_TR, "release_date.desc")),
+            
+            # ✅ İNGİLİZCE FİLMLER (250 sayfa × 4 kategori = ~5000 film)
             ("en_top_rated", fetch_discover_movies(TMDB_API_KEY, "en", MAX_PAGES_EN, "vote_average.desc")),
             ("en_popular", fetch_discover_movies(TMDB_API_KEY, "en", MAX_PAGES_EN, "popularity.desc")),
             ("en_vote_count", fetch_discover_movies(TMDB_API_KEY, "en", MAX_PAGES_EN, "vote_count.desc")),
             ("en_new_releases", fetch_discover_movies(TMDB_API_KEY, "en", MAX_PAGES_EN, "release_date.desc")),
-            ("now_playing_global", fetch_movies(TMDB_API_KEY, "now_playing", max_pages_to_fetch=30)),
+            
+            # ✅ GÜNCEL VİZYON FİLMLERİ (100 sayfa = ~2000 film)
+            ("now_playing", fetch_movies(TMDB_API_KEY, "now_playing", MAX_PAGES_NOW_PLAYING)),
+            
+            # ✅✅ YENİ EKLENDİ: POPÜLER VE YÜKSEK PUANLI GLOBAL FİLMLER
+            ("top_rated_global", fetch_movies(TMDB_API_KEY, "top_rated", 100)),
+            ("popular_global", fetch_movies(TMDB_API_KEY, "popular", 100)),
         ]
 
-        # --- FİLM DETAYLARINI ÇEKME VE DB'YE KAYDETME ---
-        total_movies_processed = 0
-
+        # --- BENZERSIZ FİLM ID'LERİNİ TOPLA ---
+        all_movie_ids = set()
         for category, movies in movie_lists:
-            print(f"\n--- {category.upper()} KATEGORİSİ İŞLENİYOR ({len(movies)} film) ---")
+            all_movie_ids.update(movie.get("id") for movie in movies if movie.get("id"))
+        
+        print(f"\n✅ Toplam benzersiz film: {len(all_movie_ids)}")
 
-            for movie in movies:
-                movie_id = movie.get("id")
-                if not movie_id:
-                    continue
+        # --- DB'DE OLANLARDAN AYIKLA ---
+        existing_ids = check_existing_movies(cursor, all_movie_ids)
+        to_fetch = list(all_movie_ids - existing_ids)
+        print(f"✅ Zaten işlenmiş: {len(existing_ids)}, İşlenecek: {len(to_fetch)}")
 
-                is_fetched, existing_film_id = check_if_fully_fetched(cursor, movie_id)
-                if is_fetched:
-                    continue
-                film_id = existing_film_id
+        if not to_fetch:
+            print("✅ Tüm filmler güncel!")
+            return
 
-                # Detayları Çek
-                details, credits = fetch_movie_details_combined(movie_id, TMDB_API_KEY)
-                trailer_url = fetch_movie_trailer(movie_id, TMDB_API_KEY)
+        # --- PARALEL DETAY ÇEKME ---
+        print(f"\n⚡ {len(to_fetch)} film detayı {MAX_WORKERS} thread ile paralel çekiliyor...")
+        all_movie_data = []
+        
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = {executor.submit(fetch_single_movie_data, mid, TMDB_API_KEY): mid for mid in to_fetch}
+            
+            for i, future in enumerate(as_completed(futures), 1):
+                result = future.result()
+                if result:
+                    all_movie_data.append(result)
+                if i % 100 == 0:
+                    print(f"  → {i}/{len(to_fetch)} film çekildi...")
 
-                if not details or not credits:
-                    continue
+        print(f"✅ {len(all_movie_data)} film detayı başarıyla çekildi.")
 
-                ozet = details.get("overview")
-                afis_url_path = details.get("poster_path")
-                imdb_puani = details.get("vote_average") or 0
-                vote_count = details.get("vote_count") or 0
-                release_date_str = details.get("release_date")
-
-                release_date = None
-                if release_date_str and release_date_str.count('-') == 2:
+        # --- VERİTABANINA TOPLU KAYDETME ---
+        print("\n💾 Veritabanına kaydediliyor...")
+        total_saved = 0
+        
+        for batch_start in range(0, len(all_movie_data), BATCH_SIZE):
+            batch = all_movie_data[batch_start:batch_start + BATCH_SIZE]
+            
+            for movie_data in batch:
+                try:
+                    details = movie_data["details"]
+                    credits = movie_data["credits"]
+                    trailer_url = movie_data["trailer_url"]
+                    movie_id = movie_data["movie_id"]
+                    
+                    # ✅ FİLTRELER YUMUŞATILDI (Daha fazla film geçsin)
+                    ozet = details.get("overview")
+                    afis_url_path = details.get("poster_path")
+                    imdb_puani = details.get("vote_average") or 0
+                    vote_count = details.get("vote_count") or 0
+                    release_date_str = details.get("release_date")
+                    
+                    # Sadece kritik alanlar kontrol ediliyor
+                    if not afis_url_path or not release_date_str:
+                        continue
+                    
+                    # Özet yoksa "Özet bulunmuyor" yaz (atlamak yerine)
+                    if not ozet:
+                        ozet = "Özet bilgisi mevcut değil."
+                    
+                    # Puan filtresi yumuşatıldı (1.0 → 0.5, 5 oy → 1 oy)
+                    if imdb_puani < 0.5 or vote_count < 1:
+                        continue
+                    
                     try:
                         release_date = date.fromisoformat(release_date_str)
-                    except ValueError:
-                        release_date = None
-
-                # KRİTİK FİLTRELER
-                if not ozet or not afis_url_path or not release_date:
-                    continue
-                if imdb_puani < 1.0 or vote_count < 5:
-                    continue
-
-                time.sleep(API_DELAY)
-
-                try:
-                    baslik = details.get("title") or "Başlık yok"
+                    except:
+                        continue
+                    
+                    baslik = details.get("title") or "Bilinmiyor"
                     afis_url = f"https://image.tmdb.org/t/p/w500{afis_url_path}"
-
-                    # Filmi ekle/güncelle
+                    
+                    # Film ekle
                     cursor.execute(
                         """
                         INSERT INTO filmler (tmdb_id, baslik, ozet, afis_url, imdb_puani, release_date, fragman_url)
                         VALUES (%s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (tmdb_id) DO UPDATE
-                        SET baslik = EXCLUDED.baslik,
-                            ozet = EXCLUDED.ozet,
-                            afis_url = EXCLUDED.afis_url,
-                            imdb_puani = EXCLUDED.imdb_puani,
-                            release_date = EXCLUDED.release_date,
-                            fragman_url = EXCLUDED.fragman_url
+                        SET baslik = EXCLUDED.baslik, ozet = EXCLUDED.ozet, afis_url = EXCLUDED.afis_url,
+                            imdb_puani = EXCLUDED.imdb_puani, release_date = EXCLUDED.release_date, fragman_url = EXCLUDED.fragman_url
                         RETURNING film_id;
                         """,
-                        (
-                            movie_id,
-                            baslik,
-                            ozet,
-                            afis_url,
-                            imdb_puani,
-                            release_date,
-                            trailer_url,
-                        ),
+                        (movie_id, baslik, ozet, afis_url, imdb_puani, release_date, trailer_url),
                     )
-
-                    film_id_row = cursor.fetchone()
-                    film_id = film_id_row[0] if film_id_row else None
-
-                    # İlişkisel tablolar
+                    film_id = cursor.fetchone()[0]
+                    
+                    # İlişkisel veriler
                     if film_id:
                         # Türler
                         cursor.execute("DELETE FROM film_turleri WHERE film_id = %s", (film_id,))
                         for genre in details.get("genres", []):
-                            tur_id = insert_data(conn, cursor, genre.get("name"), "turler", "ad")
+                            tur_id = insert_data_cached(cursor, genre.get("name"), "turler", "ad")
                             if tur_id:
-                                cursor.execute("INSERT INTO film_turleri (film_id, tur_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (film_id, tur_id))
-
+                                cursor.execute(
+                                    "INSERT INTO film_turleri (film_id, tur_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                                    (film_id, tur_id)
+                                )
+                        
                         # Yönetmenler
                         cursor.execute("DELETE FROM film_yonetmenleri WHERE film_id = %s", (film_id,))
                         for crew in credits.get("crew", []):
                             if crew.get("job") == "Director":
-                                yonetmen_id = insert_data(conn, cursor, crew.get("name"), "yonetmenler", "ad")
+                                yonetmen_id = insert_data_cached(cursor, crew.get("name"), "yonetmenler", "ad")
                                 if yonetmen_id:
-                                    cursor.execute("INSERT INTO film_yonetmenleri (film_id, yonetmen_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (film_id, yonetmen_id))
-
+                                    cursor.execute(
+                                        "INSERT INTO film_yonetmenleri (film_id, yonetmen_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                                        (film_id, yonetmen_id)
+                                    )
+                        
                         # Oyuncular
                         cursor.execute("DELETE FROM film_oyunculari WHERE film_id = %s", (film_id,))
                         for cast_member in credits.get("cast", [])[:5]:
-                            oyuncu_id = insert_data(conn, cursor, cast_member.get("name"), "oyuncular", "ad")
+                            oyuncu_id = insert_data_cached(cursor, cast_member.get("name"), "oyuncular", "ad")
                             if oyuncu_id:
-                                cursor.execute("INSERT INTO film_oyunculari (film_id, oyuncu_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (film_id, oyuncu_id))
-
-                        total_movies_processed += 1
-                        print(f"-> Başarıyla işlendi: {baslik} (Toplam: {total_movies_processed})")
-
-                    else:
-                        print(f"❌ UYARI: Film ID {movie_id} için film_id elde edilemedi. Kayıt atlandı.", file=sys.stderr)
-                        continue
-
-                except psycopg2.Error as db_e:
-                    print(f"❌ KRİTİK DB KAYIT HATASI ({movie_id} - {baslik}): {db_e}", file=sys.stderr)
-                    continue
-
+                                cursor.execute(
+                                    "INSERT INTO film_oyunculari (film_id, oyuncu_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                                    (film_id, oyuncu_id)
+                                )
+                        
+                        total_saved += 1
+                
                 except Exception as e:
-                    print(f"❌ Film İşleme (Beklenmedik) Hatası ({movie_id} - {baslik}): {e}", file=sys.stderr)
+                    print(f"❌ Film kayıt hatası (ID: {movie_data.get('movie_id')}): {e}", file=sys.stderr)
                     continue
+            
+            # Her batch sonrası commit
+            conn.commit()
+            print(f"  → {total_saved} film kaydedildi...")
 
-        print(f"\n✅ Veri çekme ve kaydetme tamamlandı. Toplam işlenen film: {total_movies_processed}")
+        print(f"\n✅ İşlem tamamlandı! Toplam kaydedilen: {total_saved} film")
 
-    except psycopg2.Error as db_e_genel:
-        print(f"❌ KRİTİK BAĞLANTI HATASI (PostgreSQL): {db_e_genel}", file=sys.stderr)
-        sys.exit(1)
     except Exception as e:
-        print(f"❌ KRİTİK GENEL HATA: {e}", file=sys.stderr)
+        print(f"❌ KRİTİK HATA: {e}", file=sys.stderr)
+        if conn:
+            conn.rollback()
         sys.exit(1)
     finally:
-        if conn and cursor:
-            try:
-                cursor.close()
-                conn.close()
-                print("Veritabanı bağlantısı kapatıldı.")
-            except Exception as close_e:
-                print(f"❌ Bağlantı kapatılırken hata oluştu: {close_e}", file=sys.stderr)
-
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+        print("Veritabanı bağlantısı kapatıldı.")
 
 if __name__ == "__main__":
     main()
