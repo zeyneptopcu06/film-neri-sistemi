@@ -1,4 +1,3 @@
-
 services:
   # 1. PostgreSQL Veritabanı Servisi
   db:
@@ -6,43 +5,87 @@ services:
     container_name: film_onerisi_db
     restart: always
     environment:
-      # Bağlantı bilgileri (web servisi buradan bağlanacak)
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
       POSTGRES_DB: film_onerileri
-
-    
     volumes:
-      # [YENİ EKLEME] Burası kritik: db_yedek.sql dosyasının bulunduğu klasörü bağlıyoruz.
-      # PostgreSQL, ilk çalıştırmada buradaki SQL dosyalarını otomatik çalıştırır.
+      # SQL dosyalarının otomatik yüklenmesi için
       - ./init_db:/docker-entrypoint-initdb.d
-      
-      # Veritabanı kalıcı olsun diye klasöre bağla (eski verileriniz burada depolanacak)
+      # Veritabanı kalıcılığı
       - postgres_data:/var/lib/postgresql/data/
-
     ports:
-    - "5433:5432" 
+      - "5433:5432"
+    # PostgreSQL için bellek optimizasyonu
+    shm_size: 256mb
 
   # 2. Flask Uygulaması (Web Servisi)
   web:
+    build: .
+    container_name: film_onerisi_app
+    restart: always
+    
+    # ✨ OPTİMİZE EDİLMİŞ GUNICORN AYARLARI
+    # --preload: Uygulamayı fork'lamadan önce yükler (bellek tasarrufu)
+    # --workers 2: 2 worker yeterli (her biri ~500MB kullanacak)
+    # --threads 2: Her worker 2 thread (toplam 4 eşzamanlı istek)
+    # --max-requests 50: Her 50 istekte worker yeniden başlar (memory leak önleme)
+    # --timeout 300: Uzun süren istekler için 5 dakika
+    # --worker-class sync: Basit sync worker (async gerek yok)
+    command: >
+      sh -c "sleep 10 && 
+      gunicorn --bind 0.0.0.0:5000 app:app 
+      --preload
+      --workers 2 
+      --threads 2
+      --max-requests 50 
+      --max-requests-jitter 10
+      --timeout 300
+      --worker-class sync
+      --access-logfile -
+      --error-logfile -
+      --log-level info"
+    
+    ports:
+      - "8080:5000"
+    
+    depends_on:
+      - db
+    
+    environment:
+      DATABASE_URL: postgresql://postgres:1234@db:5432/film_onerileri
+      TMDB_API_KEY: ${TMDB_API_KEY}
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}
+      # Python bellek optimizasyonu
+      PYTHONUNBUFFERED: "1"
+      MALLOC_TRIM_THRESHOLD_: "100000"
+    
     volumes:
       - .:/app
-    build: .  # Aynı dizindeki Dockerfile'ı kullan
-    container_name: film_onerisi_app
-    # GÜNCELLENDİ: Gunicorn zaman aşımı 300 saniyeye (5 dakika) çıkarıldı
-    command: sh -c "sleep 10 && gunicorn --bind 0.0.0.0:5000 app:app --timeout 300" 
-    restart: always
-    ports:
-      - "8080:5000" # Uygulamayı dışarıya aç
-    depends_on:
-      - db  # DB ayağa kalkmadan başlamaz
-    environment:
-      # Flask uygulaması, bu bağlantı dizesini kullanarak veritabanına erişir
-      DATABASE_URL: postgres://postgres:1234@db:5432/film_onerileri
-      #postgres://postgres:1234@db:5432/film_onerileri 
-      TMDB_API_KEY: ${TMDB_API_KEY} 
-      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}
-      
-# Veri kalıcılığı için bir volume tanımla
+      # 🎯 CACHE VOLUME - Worker'lar arası veri paylaşımı
+      - rec_cache:/tmp/rec_cache
+    
+    # 💾 BELLEK LİMİTLERİ
+    # mem_limit: Hard limit - aşarsa container kill edilir
+    # mem_reservation: Soft limit - normal kullanım
+    mem_limit: 2048M
+    mem_reservation: 1024M
+    
+    # CPU limiti (opsiyonel - sistem yükünü azaltır)
+    cpus: '2.0'
+    
+    # Health check - container sağlıklı mı kontrol et
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Volumes
 volumes:
   postgres_data:
+    driver: local
+  
+  # Öneri sistemi cache'i - worker'lar arası paylaşılan
+  rec_cache:
+    driver: local

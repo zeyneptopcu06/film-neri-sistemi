@@ -8,14 +8,15 @@ from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
-# --- SABİT AYARLAR ---
+# --- SABİT AYARLAR (ÇEKİM MİKTARLARI KESİN OLARAK DÜŞÜRÜLDÜ) ---
 TMDB_API_KEY = "e56d77228a887a715c264cbc5000b8c9"
-API_TIMEOUT = 20  # ✅ 30 → 20 (daha hızlı timeout)
-MAX_PAGES_EN = 250
-MAX_PAGES_TR = 400
-MAX_PAGES_NOW_PLAYING = 100
-MAX_WORKERS = 20    # ✅✅ 10 → 20 (2x daha fazla paralel işlem)
-BATCH_SIZE = 200    # ✅ 100 → 200 (daha büyük batch'ler)
+API_TIMEOUT = 20
+MAX_PAGES_EN = 30           # 250'den 30'a düşürüldü
+MAX_PAGES_TR = 50           # 400'den 50'ye düşürüldü
+MAX_PAGES_NOW_PLAYING = 10  # 100'den 10'a düşürüldü
+MAX_PAGES_GLOBAL = 30       # Yeni global limit (eskiden 100)
+MAX_WORKERS = 20
+BATCH_SIZE = 200
 
 # --- HIZ OPTİMİZASYONU: TOPLU KONTROL ---
 def check_existing_movies(cursor, tmdb_ids):
@@ -78,9 +79,9 @@ def insert_data_cached(cursor, data, table_name, column_name):
     except Exception:
         return None
 
-# --- API'DEN FİLM LİSTESİ ÇEKME (GECİKME YOK) ---
+# --- API'DEN FİLM LİSTESİ ÇEKME ---
 def fetch_movies(api_key, endpoint, max_pages_to_fetch):
-    """Film listesini çeker (gecikme kaldırıldı)."""
+    """Film listesini çeker."""
     all_movies = []
     try:
         first_url = f"https://api.themoviedb.org/3/movie/{endpoint}?api_key={api_key}&language=tr-TR&page=1"
@@ -117,8 +118,8 @@ def fetch_discover_movies(api_key, language_code, max_pages_to_fetch, sort_by):
             if not movies:
                 break
             all_movies.extend(movies)
-            if page_number % 20 == 0:
-                print(f"✅ DISCOVER ({language_code.upper()}): Sayfa {page_number} (Toplam: {len(all_movies)})")
+            if page_number % 10 == 0: # 20'den 10'a düşürüldü
+                print(f"✅ DISCOVER ({language_code.upper()}): Sayfa {page_number}/{max_pages_to_fetch} (Toplam: {len(all_movies)})")
     except Exception as e:
         print(f"❌ DISCOVER ({language_code.upper()}) hatası: {e}", file=sys.stderr)
     return all_movies
@@ -127,7 +128,7 @@ def fetch_discover_movies(api_key, language_code, max_pages_to_fetch, sort_by):
 def fetch_single_movie_data(movie_id, api_key):
     """Tek bir filmin tüm detaylarını çeker (paralel çalışacak)."""
     try:
-        # ✅ Tek istekte hem detay hem credits hem videos (3 istek → 1 istek)
+        # Tek istekte hem detay hem credits hem videos (3 istek → 1 istek)
         url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&language=tr-TR&append_to_response=credits,videos"
         response = requests.get(url, timeout=API_TIMEOUT)
         response.raise_for_status()
@@ -168,31 +169,31 @@ def main():
                 dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, client_encoding='utf8'
             )
 
-        conn.autocommit = False  # ✅ Transaction kullanacağız
+        conn.autocommit = False
         cursor = conn.cursor()
         print("✅ Veritabanına bağlanıldı.")
 
         # --- FİLM LİSTELERİNİ ÇEKME ---
-        print("\n📥 Film listeleri çekiliyor...")
+        print("\n📥 Film listeleri çekiliyor (Kısıtlı Mod)...")
         movie_lists = [
-            # ✅ TÜRKÇE FİLMLER (400 sayfa × 4 kategori = ~8000 film)
+            # TR FİLMLER (50 sayfa x 4 kategori = 4000 girdi)
             ("tr_top_rated", fetch_discover_movies(TMDB_API_KEY, "tr", MAX_PAGES_TR, "vote_average.desc")),
             ("tr_popular", fetch_discover_movies(TMDB_API_KEY, "tr", MAX_PAGES_TR, "popularity.desc")),
             ("tr_vote_count", fetch_discover_movies(TMDB_API_KEY, "tr", MAX_PAGES_TR, "vote_count.desc")),
             ("tr_new_releases", fetch_discover_movies(TMDB_API_KEY, "tr", MAX_PAGES_TR, "release_date.desc")),
             
-            # ✅ İNGİLİZCE FİLMLER (250 sayfa × 4 kategori = ~5000 film)
+            # EN FİLMLER (30 sayfa x 4 kategori = 2400 girdi)
             ("en_top_rated", fetch_discover_movies(TMDB_API_KEY, "en", MAX_PAGES_EN, "vote_average.desc")),
             ("en_popular", fetch_discover_movies(TMDB_API_KEY, "en", MAX_PAGES_EN, "popularity.desc")),
             ("en_vote_count", fetch_discover_movies(TMDB_API_KEY, "en", MAX_PAGES_EN, "vote_count.desc")),
             ("en_new_releases", fetch_discover_movies(TMDB_API_KEY, "en", MAX_PAGES_EN, "release_date.desc")),
             
-            # ✅ GÜNCEL VİZYON FİLMLERİ (100 sayfa = ~2000 film)
+            # GÜNCEL VİZYON FİLMLERİ (10 sayfa = 200 girdi)
             ("now_playing", fetch_movies(TMDB_API_KEY, "now_playing", MAX_PAGES_NOW_PLAYING)),
             
-            # ✅✅ YENİ EKLENDİ: POPÜLER VE YÜKSEK PUANLI GLOBAL FİLMLER
-            ("top_rated_global", fetch_movies(TMDB_API_KEY, "top_rated", 100)),
-            ("popular_global", fetch_movies(TMDB_API_KEY, "popular", 100)),
+            # GLOBAL TOP/POPÜLER (30 sayfa x 2 kategori = 1200 girdi)
+            ("top_rated_global", fetch_movies(TMDB_API_KEY, "top_rated", MAX_PAGES_GLOBAL)),
+            ("popular_global", fetch_movies(TMDB_API_KEY, "popular", MAX_PAGES_GLOBAL)),
         ]
 
         # --- BENZERSIZ FİLM ID'LERİNİ TOPLA ---
@@ -223,7 +224,7 @@ def main():
                 if result:
                     all_movie_data.append(result)
                 if i % 100 == 0:
-                    print(f"  → {i}/{len(to_fetch)} film çekildi...")
+                    print(f"  → {i}/{len(to_fetch)} film çekildi...")
 
         print(f"✅ {len(all_movie_data)} film detayı başarıyla çekildi.")
 
@@ -241,7 +242,7 @@ def main():
                     trailer_url = movie_data["trailer_url"]
                     movie_id = movie_data["movie_id"]
                     
-                    # ✅ FİLTRELER YUMUŞATILDI (Daha fazla film geçsin)
+                    # FİLTRELER YUMUŞATILDI
                     ozet = details.get("overview")
                     afis_url_path = details.get("poster_path")
                     imdb_puani = details.get("vote_average") or 0
@@ -323,7 +324,7 @@ def main():
             
             # Her batch sonrası commit
             conn.commit()
-            print(f"  → {total_saved} film kaydedildi...")
+            print(f"  → {total_saved} film kaydedildi...")
 
         print(f"\n✅ İşlem tamamlandı! Toplam kaydedilen: {total_saved} film")
 

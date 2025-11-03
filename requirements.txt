@@ -19,3 +19,4 @@ setuptools
 wheel
 httpx         # Bu satır yeni eklendi
 asyncio
+SQLAlchemy>=2.0.0

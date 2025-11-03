@@ -45,4 +45,4 @@ COPY . .
 EXPOSE 5000
 
 # Render veya Docker için PORT değişkenini kullan
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} app:app --timeout 300"]
+CMD ["sh", "-c", "gunicorn --workers 1 --bind 0.0.0.0:${PORT:-5000} app:app --timeout 300"]

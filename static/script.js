@@ -5,6 +5,23 @@
 // ANA SAYFA - SADECE ANA SAYFAYA ÖZEL FONKSİYONLAR
 // ============================================
 
+// -------------------------------------------------------------------
+// YARDIMCI KARIŞTIRMA FONKSİYONU
+// -------------------------------------------------------------------
+
+/**
+ * Bir diziyi yerinde (in-place) rastgele karıştırır (Fisher-Yates algoritması).
+ * @param {Array} array Karıştırılacak dizi.
+ */
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     // Ana Sayfa Elementleri
     const popularList = document.getElementById('popular-list'); 
@@ -17,13 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // YARDIMCI YÜKLEME FONKSİYONLARI
     // -------------------------------------------------------------------
 
-    // Popüler Filmleri Çekme
+    // Popüler Filmleri Çekme (GÜNCELLENDİ)
     async function fetchAndDisplayPopularMovies() {
         if (!popularList) return [];
         try {
             popularList.innerHTML = 'Yükleniyor...';
             const response = await fetch('/api/popular_movies');
-            const popularMovies = await response.json();
+            let popularMovies = await response.json(); // let olarak tanımlandı
+            
+            // 🎬 RASTGELE KARIŞTIRMA VE LİMİTLEME
+            popularMovies = shuffleArray(popularMovies);
+            popularMovies = popularMovies.slice(0, 30); // İlk 30 filmi göster
             
             popularList.innerHTML = '';
             const shownIds = [];
@@ -36,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             updateAllLikeButtons();
             
-            console.log('✅ Popüler filmler yüklendi:', shownIds.length, 'film');
+            console.log('✅ Popüler filmler yüklendi:', shownIds.length, 'film (Rastgele Sıra)');
             return shownIds;
         } catch (error) {
             console.error('Popüler filmler çekme hatası:', error);
@@ -47,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // En Son Çıkan Filmleri Çekme
+    // En Son Çıkan Filmleri Çekme (GÜNCELLENDİ)
     async function fetchLatestMovies(excludeIds = new Set()) {
         if (!latestList) return [];
         try {
@@ -59,7 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('🔍 Latest movies isteği:', url);
             
             const response = await fetch(url);
-            const movies = await response.json();
+            let movies = await response.json(); // let olarak tanımlandı
+            
+            // 🎬 RASTGELE KARIŞTIRMA VE LİMİTLEME
+            movies = shuffleArray(movies);
+            movies = movies.slice(0, 30); // İlk 30 filmi göster
+            
             latestList.innerHTML = '';
 
             if (movies.length === 0) {
@@ -76,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             updateAllLikeButtons();
-            console.log('✅ Yeni filmler yüklendi:', shownIds.length, 'film (Exclude:', excludeIds.size, ')');
+            console.log('✅ Yeni filmler yüklendi:', shownIds.length, 'film (Rastgele Sıra)');
             return shownIds;
         } catch (error) {
             console.error("Yeni filmler çekme hatası:", error);
@@ -87,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Kişisel Önerileri Çekme
+    // Kişisel Önerileri Çekme (GÜNCELLENDİ)
     async function fetchAndDisplayRecommendations(excludeIds = new Set()) {
         if (!recommendList) return [];
 
@@ -100,7 +126,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('🔍 Recommendations isteği:', url);
             
             const response = await fetch(url);
-            const recommendedMovies = await response.json();
+            let recommendedMovies = await response.json(); // let olarak tanımlandı
+
+            // 🎬 RASTGELE KARIŞTIRMA VE LİMİTLEME
+            recommendedMovies = shuffleArray(recommendedMovies);
+            recommendedMovies = recommendedMovies.slice(0, 30); // İlk 30 filmi göster
 
             recommendList.innerHTML = '';
 
@@ -125,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             updateAllLikeButtons();
-            console.log('✅ Öneriler yüklendi ve gösterildi:', shownIds.length, 'film');
+            console.log('✅ Öneriler yüklendi ve gösterildi:', shownIds.length, 'film (Rastgele Sıra)');
             return shownIds;
         } catch (error) {
             console.error('Önerilen filmler çekme hatası:', error);
@@ -133,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Tür Bazlı Önerileri Çekme
+    // Tür Bazlı Önerileri Çekme (GÜNCELLENDİ)
     async function fetchAndDisplayGenreRecommendations(excludeIds = new Set()) {
         if (!genreRecommendList) return [];
 
@@ -146,7 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('🔍 Genre recommendations isteği:', url);
             
             const response = await fetch(url);
-            const recommendedMovies = await response.json();
+            let recommendedMovies = await response.json(); // let olarak tanımlandı
+
+            // 🎬 RASTGELE KARIŞTIRMA VE LİMİTLEME
+            recommendedMovies = shuffleArray(recommendedMovies);
+            recommendedMovies = recommendedMovies.slice(0, 30); // İlk 30 filmi göster
 
             genreRecommendList.innerHTML = '';
 
@@ -171,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             updateAllLikeButtons();
-            console.log('✅ Tür önerileri yüklendi ve gösterildi:', shownIds.length, 'film');
+            console.log('✅ Tür önerileri yüklendi ve gösterildi:', shownIds.length, 'film (Rastgele Sıra)');
             return shownIds;
         } catch (error) {
             console.error('Tür bazlı öneriler çekme hatası:', error);
@@ -179,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Keşfet/Rastgele Filmleri Çekme
+    // Keşfet/Rastgele Filmleri Çekme (GÜNCELLENDİ)
     async function fetchAndDisplayExploreSection(excludeIds = new Set()) {
         if (!exploreList) return [];
         
@@ -197,7 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
                  throw new Error(`HTTP hata kodu: ${response.status}`);
             }
             
-            const randomMovies = await response.json();
+            let randomMovies = await response.json(); // let olarak tanımlandı
+
+            // 🎬 RASTGELE KARIŞTIRMA (Explore zaten rastgeledir ama yine de sıra değişsin)
+            randomMovies = shuffleArray(randomMovies);
+            // Burada limitleme yapmadım, backend ne kadar gönderirse hepsini gösterir.
 
             exploreList.innerHTML = '';
             const shownIds = [];
@@ -210,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             updateAllLikeButtons();
-            console.log('✅ Keşfet filmleri yüklendi:', shownIds.length, 'film (Exclude:', excludeIds.size, ')');
+            console.log('✅ Keşfet filmleri yüklendi:', shownIds.length, 'film (Rastgele Sıra)');
             return shownIds;
             
         } catch (error) {
@@ -244,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const shownMovieIds = new Set();
 
         // Sırayla çek ve ID'leri topla
+        // Not: Bu sırayı değiştirmedim (Önce Popüler, sonra Yeni, sonra Keşfet, sonra Öneriler)
         if (popularList) {
             const popularIds = await fetchAndDisplayPopularMovies();
             popularIds.forEach(id => shownMovieIds.add(id));

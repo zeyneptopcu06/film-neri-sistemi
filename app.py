@@ -8,9 +8,7 @@ from psycopg2.extras import RealDictCursor
 from collections import defaultdict
 from recommender_core import (
     get_recommendations,
-    initialize_recommendation_system,
-    df_final,
-)
+    initialize_recommendation_system,)
 import pandas as pd
 from functools import wraps
 from flask import session, redirect, url_for
