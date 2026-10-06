@@ -62,18 +62,24 @@ Projeyi kendi bilgisayarınızda çalıştırmak için proje klasöründe `.env`
 
 Projeyi klonlayın:
 
-```bash
-git clone https://github.com/zeyneptopcu06/film-neri-sistemi.git
-cd film-neri-sistemi
+`git clone https://github.com/zeyneptopcu06/film-neri-sistemi.git`
+
+Proje klasörüne girin:
+
+`cd film-neri-sistemi`
 
 Docker ile çalıştırın:
-docker-compose up --build
+
+`docker-compose up --build`
 
 Uygulama çalıştıktan sonra tarayıcıdan şu adrese gidin:
-http://localhost:8080
 
-📚 Bu Projede Kazanılan Deneyimler
+`http://localhost:8080`
+
+## 📚 Bu Projede Kazanılan Deneyimler
+
 Bu proje ile şu konularda pratik yapılmıştır:
+
 - Flask ile web uygulaması geliştirme
 - PostgreSQL veritabanı kullanımı
 - Film öneri sistemi mantığı
@@ -83,7 +89,13 @@ Bu proje ile şu konularda pratik yapılmıştır:
 - Docker ile uygulama çalıştırma
 - Ortam değişkenleriyle gizli bilgileri yönetme
 - Git ve GitHub ile proje paylaşımı
-👩‍💻 Geliştirici
-Zeynep Topçu
-Bilgisayar Mühendisliği Mezunu
-GitHub: zeyneptopcu06
+
+## 👩‍💻 Geliştirici
+
+**Zeynep Topçu**  
+Bilgisayar Mühendisliği Mezunu  
+GitHub: [zeyneptopcu06](https://github.com/zeyneptopcu06)
+
+---
+
+Bu proje, yazılım geliştirme portföyümde yer alan Python, Flask, PostgreSQL, Docker ve öneri sistemi becerilerimi gösteren bir projedir.
